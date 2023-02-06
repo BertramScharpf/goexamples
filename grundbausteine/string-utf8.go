@@ -1,12 +1,15 @@
 package main
 
+import "fmt"
+
 func main() {
 	s := "Hallöchen"
 	r := []rune(s)
 
-	println(string(r))
-	println(string(r[4:6]))
-	println(string(r[4:5]))
-	println(string(r[:4]))
-	println(string(r[5:]))
+	println(r)
+	fmt.Println(r)
+	fmt.Println(string(r[4:6]))
+	fmt.Println(string(r[4:5]))
+	fmt.Println(string(r[:4]))
+	fmt.Println(string(r[5:]))
 }
