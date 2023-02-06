@@ -6,7 +6,9 @@ import (
 )
 
 func main() {
-	defer fmt.Println("world")
+	for i := 0; i < 5; i++ {
+		defer fmt.Println("world %v", i)
+	}
 	fmt.Println("hello")
 	time.Sleep(3 * time.Second)
 }
