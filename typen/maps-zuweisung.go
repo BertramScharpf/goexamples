@@ -12,7 +12,11 @@ func main() {
 	fmt.Println("The value:", m["Answer"])
 
 	delete(m, "Answer")
-	fmt.Println("The value:", m["Answer"])
+	fmt.Println("The Value:", m["Answer"])
+	// m["Answer"] = 0
+	for k := range m {
+		fmt.Println(k)
+	}
 
 	v, ok := m["Answer"]
 	if ok {
