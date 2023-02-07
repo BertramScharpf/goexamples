@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func dummies() [3]string {
+func objdummies() [3]string {
 	var b [3]string = [...]string{"foo", "bar", "baz"}
 	go func() {
 		time.Sleep(2 * time.Second)
@@ -24,7 +24,7 @@ func ptrdummies() *[3]string {
 }
 
 func main() {
-	a := dummies()
+	a := objdummies()
 	fmt.Printf("%v (%T)\n", a, a)
 	fmt.Println(a)
 
