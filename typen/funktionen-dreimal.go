@@ -3,14 +3,14 @@ package main
 import "fmt"
 
 func machsDreimal(fn func()) {
-	fn()
-	fn()
-	fn()
+	fn("Hans")
+	fn("Fred")
+	fn("Reto")
 }
 
 func main() {
-	f := func() {
-		fmt.Println("Hello, here is an anonymous function!")
+	f := func(n string) {
+		fmt.Printf("Hello, %v!", n)
 	}
 	machsDreimal(f)
 }
