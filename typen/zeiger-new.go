@@ -8,4 +8,6 @@ func main() {
 	fmt.Printf("p: %v an %p (%T)\n", *p, p, p)
 	*p = 33
 	fmt.Printf("p: %v an %p (%T)\n", *p, p, p)
+	p = new(int)
+	fmt.Printf("p: %v an %p (%T)\n", *p, p, p)
 }
