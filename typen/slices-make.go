@@ -11,7 +11,7 @@ func main() {
 	a := make([]int, 5)
 	printSlice("a", a)
 
-	b := make([]int, 0, 5)  // mit Kapazität
+	b := make([]int, 0, 15)  // mit Kapazität
 	printSlice("b", b)
 
 	c := b[:2]
