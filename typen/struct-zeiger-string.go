@@ -26,7 +26,7 @@ func setit(m *Mark) {
 }
 
 func main() {
-	var m = Mark{Vertex:Vertex{1,2},Title:"foo"}
+	var m = Mark{V: Vertex{1, 2}, Title: "foo"}
 
 	fmt.Println(m, m.V)
 	dontsetit(m)
