@@ -30,7 +30,7 @@ func main() {
 
 	q = DrawWheel(`|/-\`)
 	time.Sleep(5 * time.Second)
-	defer close(q)
+	close(q)
 	time.Sleep(200 * time.Millisecond)
 
 	q = DrawWheel(".oO°*")
