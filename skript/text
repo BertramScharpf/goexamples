@@ -1,0 +1,5496 @@
+Go Programmierung
+=================
+:author:   Bertram Scharpf
+:email:    <software@bertram-scharpf.de>
+:revision: 0.1
+
+:prewrap!:
+:table-caption!:
+
+
+
+== Überblick
+
+- Entwickelt ab 2007 u. a. von Ken Thompson.
+- Motiviert durch Abneigung gegen `C++`.
+- Betreut von Google.
+
+
+
+=== Merkmale
+
+- statisch typisiert
+- kompiliert, aber nah an dynamischen Sprachen
+- Garbage collection
+- Nebenläufigkeit
+- Closures
+- Reflexion
+
+Kein:
+
+- Überladen von Funktionen (außer bezüglich Empfänger)
+- Überladen von Operatoren
+
+
+
+=== Hilfe
+
+Spezifikation:  https://golang.org/ref/spec
+Stilratschläge: https://golang.org/doc/effective_go.html
+
+Dokumentation zum Paket "builtin": https://golang.org/pkg/builtin/
+Dokumentation zum Paket "fmt":     https://golang.org/pkg/fmt/
+
+
+
+=== Formatierung
+
+Das Programm `gofmt` legt eine Standardformatierung auf jedes
+Programm.
+
+
+
+=== Hello, world!
+
+---- ueberblick/hello.go ---------------------------------------v
+/*
+ *  hello.go  --  Hello-world program
+ */
+
+package main
+
+import "fmt"
+
+func main() { // Hauptprogramm
+	fmt.Println("Hello, World!")
+}
+----------------------------------------------------------------^
+
+Elemente:
+
+  - Kommentare
+  - Paket laden
+  - Funktion
+  - String-Konstante
+  - Variable
+  - Funktionsaufruf
+
+Token-Struktur:
+
+    fmt  --  .  -- Println  --  (  -- "Hello, World!"  --  )  -- }
+
+  - Text getrennt durch Leerraum.
+  - Keine Strichpunkte.
+  - Einrückung mit Tabulator
+
+
+Aufruf:
+
+    go run hello.go
+    go build hello.go
+
+
+
+=== Speicherformen
+
+In Funktionen: Variablen werden auf einen Stapel („Stack“) gelegt.
+
+Über Funktionsgrenzen hinweg kann Speicher von einer Halde
+(„Heap“) geholt werden, muß aber nach Gebrauch wieder an diese
+zurückgegeben werden.
+
+Unterschiede:
+
+  - Stapel verlangt Objekte fester Größe.
+  - Stapel möchte Objekte einer Größe im Bereich der
+    Prozessor-Register (1, 2, 4, 8 Byte)
+  - Stapel-Objekte werden ständig kopiert und sollten deshalb
+    klein sein.
+  - Stapel-Objekte werden automatisch aufgeräumt.
+
+
+
+== Grundbausteine
+
+
+
+=== Programmstruktur
+
+  - `package`
+  - `import`
+  - Variablen und Anweisungen
+
+---- grundbausteine/imports-multiple.go ------------------------v
+package main
+
+import "fmt"
+import "math"
+
+func main() {
+	fmt.Printf("Now you have %g problems.\n", math.Sqrt(7))
+}
+----------------------------------------------------------------^
+
+Empfohlen: `import` mit mehreren Paketen in der Klammer heißt
+„factored“ import statement.
+
+---- grundbausteine/imports.go ---------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func main() {
+	fmt.Printf("Now you have %g problems.\n", math.Sqrt(7))
+}
+----------------------------------------------------------------^
+
+Pakete exportieren, was mit einem Großbuchstaben anfängt.
+
+---- grundbausteine/exportierte-namen.go -----------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func main() {
+	fmt.Println(math.Pi)
+}
+----------------------------------------------------------------^
+
+
+
+=== Funktionen
+
+Anzahl und Typ der Parameter, Typ der Rückgabe müssen festgelegt
+werden.
+
+---- grundbausteine/funktionen.go ------------------------------v
+package main
+
+import "fmt"
+
+func add(x int, y int) int {
+	return x + y
+}
+
+func main() {
+	fmt.Println(add(42, 13))
+}
+----------------------------------------------------------------^
+
+Mehrfach nacheinander vorkommende Typen düfen auch abgekürzt
+werden,
+
+---- grundbausteine/funktionen-kurz.go -------------------------v
+package main
+
+import "fmt"
+
+func add(x, y int) int {
+	return x + y
+}
+
+func main() {
+	fmt.Println(add(42, 13))
+}
+----------------------------------------------------------------^
+
+Eine Funktion darf auch mehrere Ergebnisse zurückliefern.
+
+---- grundbausteine/mehrfachergebnis.go ------------------------v
+package main
+
+import "fmt"
+
+func swap(x, y string) (string, string) {
+	return y, x
+}
+
+func main() {
+	a, b := swap("world", "hello")
+	fmt.Println(a, b)
+}
+----------------------------------------------------------------^
+
+Benannte Rückgabewerte: Müssen gesetzt werden; dann ist die
+Rückkehr-Anweisung leer.
+
+---- grundbausteine/rueckgabe-benannt.go -----------------------v
+package main
+
+import "fmt"
+
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return
+}
+
+func main() {
+	fmt.Println(split(17))
+}
+----------------------------------------------------------------^
+
+Eine Funktion darf auch nachträglich bekanntgemacht werden.
+
+---- grundbausteine/funktion-danach.go -------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println(add(33, 67))
+}
+
+func add(x, y int) int {
+	return x + y
+}
+----------------------------------------------------------------^
+
+Ein fehlendes `return` kompiliert nicht.
+
+Allerdings darf ein Rückgabewert verworfen werden.
+
+---- grundbausteine/rueckgabe-verworfen.go ---------------------v
+package main
+
+import "fmt"
+
+func main() {
+	add(33, 67)
+}
+
+func add(x, y int) int {
+	fmt.Println("adding two numbers...")
+	return x + y
+}
+----------------------------------------------------------------^
+
+Funktionen dürfen auch eine beliebige Anzahl von Parametern
+annehmen. Der Parameter ist dann eine „Slice“, was später
+behandelt wird.
+
+---- grundbausteine/funktion-variadisch.go ---------------------v
+package main
+
+import "fmt"
+
+func sum(nums ...int) {
+	fmt.Print(nums, " ")
+	total := 0
+	for _, num := range nums {
+		total += num
+	}
+	fmt.Println(total)
+}
+
+func main() {
+
+	sum(1, 2)
+	sum(1, 2, 3)
+	sum()
+
+	nums := []int{1, 2, 3, 4}
+	sum(nums...)
+}
+----------------------------------------------------------------^
+
+
+
+==== Rekursion
+
+Rekursion ist erlaubt.
+
+---- grundbausteine/rekursion.go -------------------------------v
+package main
+
+import "fmt"
+
+func factorial_recursive(n int) int {
+	if n <= 1 {
+		return n
+	}
+	return n * factorial_recursive(n-1)
+}
+
+func factorial_loop(n int) int {
+	r := 1
+	for i := 1; i <= n; i += 1 {
+		r *= i
+	}
+	return r
+}
+
+func main() {
+	fmt.Println(factorial_recursive(6000))
+	fmt.Println(factorial_loop(6))
+}
+----------------------------------------------------------------^
+
+Endrekursion wird nicht optimiert.
+
+---- grundbausteine/endrekursion.go ----------------------------v
+package main
+
+import "fmt"
+
+func factorial_zweit(total, n int) int {
+	if n == 0 {
+		return total
+	} else {
+		return factorial_zweit(total*n, n-1)
+	}
+}
+
+func factorial_endrek(n int) int {
+	return factorial_zweit(1, n)
+}
+
+func main() {
+	fmt.Println(factorial_endrek(6))
+}
+----------------------------------------------------------------^
+
+
+
+=== Variablen und Konstanten
+
+Globale Variablen werden außerhalb deklariert, lokale innerhalb
+einer Funktion. Typen dürfen zusammengefaßt werden.
+
+---- grundbausteine/variablen.go -------------------------------v
+package main
+
+import "fmt"
+
+var c, python, java bool
+
+func main() {
+	var i int
+	fmt.Println(i, c, python, java)
+}
+----------------------------------------------------------------^
+
+Variablen dürfen initialisiert werden.
+
+---- grundbausteine/variablen-initialisiert.go -----------------v
+package main
+
+import "fmt"
+
+var i, j int = 1, 2
+
+func main() {
+	var c, python, java = true, false, "no!"
+	fmt.Println(i, j, c, python, java)
+}
+----------------------------------------------------------------^
+
+Deklarationen dürfen auch zusammengefaßt werden.
+
+---- grundbausteine/variablen-zusammen.go ----------------------v
+package main
+
+import "fmt"
+
+var (
+	i    int  = 1
+	done bool = false
+)
+
+func main() {
+	fmt.Println(i, done)
+}
+----------------------------------------------------------------^
+
+
+
+==== Automatische Deklaration
+
+Anstatt deklariert zu werden, darf eine Variable auch automatisch
+einen Typ zugewiesen bekommen (`:=`). Dieser wird durch die Größe
+ermittelt, mit der die Variable initialisiert wird.
+
+---- grundbausteine/variablen-schnell.go -----------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var i, j int = 1, 2
+	k := 3
+	c, python, java := true, false, "no!"
+
+	fmt.Println(i, j, k, c, python, java)
+}
+----------------------------------------------------------------^
+
+
+
+==== Konstanten
+
+Konstanten werden deklariert mit `const` statt mit `var`.
+Eine Zuweisung mit `:=` gibt es nicht.
+
+---- grundbausteine/konstanten.go ------------------------------v
+package main
+
+import "fmt"
+
+const Pi = 3.14
+
+func main() {
+	const World = "世界"
+	fmt.Println("Hello", World)
+	fmt.Println("Happy", Pi, "Day")
+
+	const Truth = true
+	fmt.Println("Go rules?", Truth)
+}
+----------------------------------------------------------------^
+
+Auch Konstanten dürfen zusammengefaßt werden.
+
+---- grundbausteine/konstanten-zusammen.go ---------------------v
+package main
+
+import "fmt"
+
+const (
+	Pi = 3.141592653589793
+	E  = 2.718281828459045
+)
+
+func main() {
+	fmt.Println(Pi)
+	fmt.Println(E)
+}
+----------------------------------------------------------------^
+
+Für Konstanten gibt es einen Wert `iota`, der bei
+Initialisierungen hochgezählt wird.
+
+---- grundbausteine/iota.go ------------------------------------v
+package main
+
+import (
+	"fmt"
+)
+
+const (
+	f float64 = iota
+	g float64 = iota
+	h float64 = iota
+)
+
+const (
+	_  uint32 = iota
+	KB uint32 = 1 << (10*iota)
+	MB uint32 = 1 << (10*iota)
+	GB uint32 = 1 << (10*iota)
+)
+
+func main() {
+	fmt.Printf("%5.3f\n", f)
+	fmt.Printf("%5.3f\n", g)
+	fmt.Printf("%5.3f\n", h)
+
+	fmt.Println(KB)
+	fmt.Println(MB)
+	fmt.Println(GB)
+}
+----------------------------------------------------------------^
+
+Beispiel für Enum:
+
+---- grundbausteine/enum.go ------------------------------------v
+package main
+
+import (
+	"fmt"
+)
+
+type Wochentag int
+
+const (
+	Mo Wochentag = iota
+	Di
+	Mi
+	Do
+	Fr
+	Sa
+	So
+)
+
+func ist_wt( wt Wochentag) {
+	switch os := wt; os {
+	case So:
+		fmt.Println("Sonntag.")
+	default:
+		fmt.Println("Werktag.")
+	}
+}
+
+func main() {
+	ist_wt( So)
+}
+----------------------------------------------------------------^
+
+Typ ist verpflichtend, sobald er als Return-Wert auftaucht.
+
+---- grundbausteine/enum-return.go -----------------------------v
+package main
+
+import (
+	"fmt"
+)
+
+type Wochentag int
+
+const (
+	Mo Wochentag = iota
+	Di
+	Mi
+	Do
+	Fr
+	Sa
+	So
+)
+
+func gib_wt() Wochentag {
+	return 11 // Hier noch erlaubt, auch wenn falsch.
+}
+
+func ist_wt(wt Wochentag) {
+	switch os := wt; os {
+	case So:
+		fmt.Println("Sonntag.")
+	default:
+		fmt.Println("Werktag.")
+	}
+}
+
+func show_int(i int) {
+	fmt.Println(i)
+}
+
+func main() {
+	wt := gib_wt()
+	fmt.Printf("wt=%v (%T)\n", wt, wt)
+	ist_wt(wt)
+	show_int(int(wt)) // zwingende Umwandlung
+}
+----------------------------------------------------------------^
+
+
+
+
+==== Mehrfachzuweisung
+
+Mehrere Variablen mit einem Komma aneinandergehängt dürfen einer
+gleichen Anzahl von Werten gegenüberstehen.
+
+Zeitlich greift die erste Zuweisung der zweiten nicht vor.
+
+---- grundbausteine/mehrfach-swap.go ---------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	a, b := 33, 444
+	fmt.Println(a, b)
+	b, a = a, b
+	fmt.Println(a, b)
+}
+----------------------------------------------------------------^
+
+Viele Funktionen liefern so zurück, ob sie erfolgreich waren.
+
+---- grundbausteine/mehrfach-erfolg.go -------------------------v
+package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+func main() {
+	i, err := strconv.Atoi("42")
+	if err != nil {
+		fmt.Printf("couldn't convert number: %v\n", err)
+		return
+	}
+	fmt.Println("Converted integer:", i)
+}
+----------------------------------------------------------------^
+
+Nur mindestens eine Variable muß neu sein in einer
+Implizitdeklaration.
+
+---- grundbausteine/mehrfach-nichtneu.go -----------------------v
+package main
+
+import "fmt"
+
+func main() {
+	a, b := 33, 444
+	fmt.Println(a, b)
+	c, b := 55, 666 // b war schon deklariert, aber nicht c
+	fmt.Println(c, b)
+}
+----------------------------------------------------------------^
+
+
+
+==== Anonyme Variable
+
+Die anonyme Variable (Blank identifier) `_` meldet keine Warnung,
+wenn sie nicht mehr verwendet wird; sie darf sogar nicht mehr
+verwendet werden.
+
+---- grundbausteine/anonym.go ----------------------------------v
+package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+func main() {
+	i, _ := strconv.Atoi("blablabla")
+	fmt.Println("Converted integer:", i)
+}
+----------------------------------------------------------------^
+
+
+
+
+== Datentypen
+
+  - bool
+  - string
+  - int  int8  int16  int32  int64
+  - uint uint8 uint16 uint32 uint64 uintptr
+  - byte     // alias für uint8
+  - rune     // alias für int32 == Unicode code point
+  - float32 float64
+  - complex64 complex128
+
+
+
+=== Festwerte
+
+  - Ganze Zahlen, 0x100, 1_000
+  - Kommazahlen 3.1415 1.0 .25 1e6, komplexe: 1i
+  - "Zeichenketten" und `Zeichenketten` (raw = ohne \)
+  - Einzelzeichen in '.'
+  - true, false
+  - Nullzeiger: nil
+
+---- grundbausteine/basistypen.go ------------------------------v
+package main
+
+import (
+	"fmt"
+	"math/cmplx" // wegen cmplx.Sqrt
+)
+
+var (
+	ToBe   bool       = false
+	MaxInt uint64     = 1<<64 - 1
+	z      complex128 = cmplx.Sqrt(-5 + 12i)
+)
+
+func main() {
+	fmt.Printf("Type: %T Value: %v\n", ToBe, ToBe)
+	fmt.Printf("Type: %T Value: %v\n", MaxInt, MaxInt)
+	fmt.Printf("Type: %T Value: %v\n", z, z)
+}
+----------------------------------------------------------------^
+
+Typermittlung:
+
+---- grundbausteine/typen.go -----------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	v := 42
+	// v := 0x7fffffffffffffff
+	// v := 1.0
+	// v := 'ä'
+	// v := "xyz"
+	fmt.Printf("v=%v is of type %T\n", v, v)
+}
+----------------------------------------------------------------^
+
+Es wird mit Nullwerten initialisiert.
+
+---- grundbausteine/nullwerte.go -------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var i int
+	var f float64
+	var b bool
+	var s string
+	fmt.Printf("%v %v %v %q\n", i, f, b, s)
+}
+----------------------------------------------------------------^
+
+Typenunmwandlung geschieht nicht automatisch.
+
+---- grundbausteine/typ-umwandlung.go --------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func main() {
+	var x, y int = 3, 4
+	var f float64 = math.Sqrt(float64(x*x + y*y))
+	var z uint = uint(f)
+	fmt.Println(x, y, z)
+}
+----------------------------------------------------------------^
+
+Vorsicht mit Überläufen:
+
+---- grundbausteine/ganzzahl-ueberlauf.go ----------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var v int = 0x7fffffffffffffff
+	var w float64 = float64(v * v)
+	fmt.Println(w)
+	var q float64 = float64(v) * float64(v)
+	fmt.Println(q)
+}
+----------------------------------------------------------------^
+
+Die Typermittlung ist sehr dynamisch.
+
+---- grundbausteine/numeriktypen.go ----------------------------v
+package main
+
+import "fmt"
+
+const (
+	Big   = 1 << 100 // Nachher als Integer nicht darstellbar
+	Small = Big >> 99
+)
+
+func needInt(x int) int { return x*10 + 1 }
+func needFloat(x float64) float64 {
+	return x * 0.1
+}
+
+func main() {
+	fmt.Println(needInt(Small))
+	fmt.Println(needFloat(Small))
+	fmt.Println(needFloat(Big))
+}
+----------------------------------------------------------------^
+
+Vorsicht mit Ganzzahl-Grenzen. Die Ganzzahltypen werden auf
+Prozessorebene berechnet, und ein Überlauf spiegelt sich in
+Go nicht wieder.
+
+---- grundbausteine/byteueberlauf.go ---------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var a byte = 0xfd
+	for i := 0; i < 7; i++ {
+		fmt.Println(a)
+		a += 1
+	}
+}
+----------------------------------------------------------------^
+
+---- grundbausteine/intueberlauf.go ----------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var a = 0x7ffffffffffffffd
+	for i := 0; i < 7; i++ {
+		fmt.Println(a)
+		a += 1
+	}
+}
+----------------------------------------------------------------^
+
+Vorsicht mit Fließkommazahlen. Die Begrenzung der Genauigkeit kann
+Rundungsfehler erzeugen.
+
+---- grundbausteine/float.go -----------------------------------v
+package main
+
+import "fmt"
+
+func beyond_mantissa() {
+	var a float64 = 1e16;
+	var b float64 = 1e16;
+	a += 1
+	fmt.Println(a-b)
+}
+
+func fuzzyness() {
+	var a float64 = 0.0;
+	for i := 0; i < 1000; i++ {
+		a += 0.001
+	}
+	fmt.Println(a)
+}
+
+func main() {
+	beyond_mantissa()
+	fuzzyness()
+}
+----------------------------------------------------------------^
+
+
+
+==== Strings
+
+---- grundbausteine/string-konstanten.go -----------------------v
+package main
+
+import "fmt"
+
+func showit(s string) {
+	fmt.Printf("[%v]\n", s)
+}
+
+func main() {
+	showit("Hello from Go!")
+	showit("Er fragte: \"Wie geht's?\"")
+	showit("erstens\nzweitens")
+	showit(`\"\n\`) // "raw" strings
+	showit("Es kostet \u20ac 100,-")
+	showit("Es kostet \U000020ac 100,-")
+	showit("Es kostet \xe2\x82\xac 100,-")
+	showit("Es kostet \xe2\x82 100,-") // ungültiges UTF-8
+}
+----------------------------------------------------------------^
+
+Teile eines Strings können mit `[]` gebildet werden.
+
+Vorsicht: Wird der Ausschnitt direkt auf den String angewandt,
+schneidet er nach Bytes ab, nicht nach UTF-8-Folgen.
+
+---- grundbausteine/string-ausschnitt.go -----------------------v
+package main
+
+import "fmt"
+
+func main() {
+	s := "Hallöchen"
+
+	fmt.Println(s)
+	fmt.Println(s[4:6])
+	fmt.Println(s[4:5])
+	fmt.Println(s[:4])
+	fmt.Println(s[5:])
+}
+----------------------------------------------------------------^
+
+Umwandlung in UTF-8-Folgen geschieht automatisch bei Typumwandlung
+nach `rune`. Ebenso die Rückumwandlung zum String.
+
+---- grundbausteine/string-utf8.go -----------------------------v
+package main
+
+func main() {
+	s := "Hallöchen"
+	r := []rune(s)
+
+	println(string(r))
+	println(string(r[4:6]))
+	println(string(r[4:5]))
+	println(string(r[:4]))
+	println(string(r[5:]))
+}
+----------------------------------------------------------------^
+
+---- grundbausteine/string-bearbeitung.go ----------------------v
+package main
+
+import "fmt"
+
+func Reverse(s string) string {
+	r := []rune(s)
+	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
+		r[i], r[j] = r[j], r[i]
+	}
+	return string(r)
+}
+
+func main() {
+	fmt.Println([]rune("hello"))
+	fmt.Println(Reverse("Reliefpfeiler"))
+}
+----------------------------------------------------------------^
+
+
+
+=== Operatoren
+
+Die Rangfolge der Operatoren ist wesentlich einfacher als in
+anderen Programmiersprachen.
+
+    Vorrang     Operator                Bitweiser Operator
+    5           *  /  %                 <<  >>  &  &^
+    4           +  -                    |  ^
+    3           ==  !=  <  <=  >  >=
+    2           &&
+    1           ||
+
+---- grundbausteine/kurzschluss.go -----------------------------v
+package main
+
+import "fmt"
+
+func sagwas() bool {
+	fmt.Println("Hier ist sagwas().")
+	return true
+}
+
+func main() {
+	if false && sagwas() {
+		fmt.Println("Auswertung erfolgreich.")
+	}
+	fmt.Println("fertig.")
+}
+----------------------------------------------------------------^
+
+
+
+=== Zuweisungen
+
+Zuweisungen gelten als Anweisung, nicht als Operator.
+
+---- grundbausteine/assignplus.go ------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	i := 5
+	i += 3 // Hat keinen Rückgabewert.
+	fmt.Println(i)
+}
+----------------------------------------------------------------^
+
+Dies gilt auch für `++` und `--`.
+
+---- grundbausteine/inkrement.go -------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	i := 5
+	i++ // Darf nicht als Wert verwendet werden.
+	fmt.Println(i)
+}
+----------------------------------------------------------------^
+
+
+
+== Kontrollfluß
+
+
+
+=== Schleifen
+
+Schleifen sehen ähnlich aus wie in C, nur ohne runde Klammer. Die
+geschweifte Klammer ist Pflicht.
+
+---- kontrollfluss/for.go --------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	sum := 0
+	for i := 0; i < 10; i++ {
+		sum += i
+	}
+	fmt.Println(sum)
+}
+----------------------------------------------------------------^
+
+Die Anweisungen vor und nach den Strichpunkten dürfen auch
+weggelassen werden.
+
+---- kontrollfluss/for-allein.go -------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	sum := 1
+	for ; sum < 1000; {
+		sum += sum
+	}
+	fmt.Println(sum)
+}
+----------------------------------------------------------------^
+
+Auch die Strichpunkte dürfen weggelassen werden.
+
+---- kontrollfluss/for-ist-das-while-von-go.go -----------------v
+package main
+
+import "fmt"
+
+func main() {
+	sum := 1
+	for sum < 1000 {
+		sum += sum
+	}
+	fmt.Println(sum)
+}
+----------------------------------------------------------------^
+
+Ein `for` ohne alles läuft für immer.
+
+---- kontrollfluss/forever.go ----------------------------------v
+package main
+
+func main() {
+	for {
+	}
+}
+----------------------------------------------------------------^
+
+Etwas wie `do-while` in C oder `repeat-until` in Pascal gibt es
+nicht.
+
+---- kontrollfluss/for-als-dowhile.go --------------------------v
+package main
+
+func main() {
+	for ok := true; ok; ok = !condition() {
+		work()
+	}
+
+	for {
+		work()
+		if condition() {
+			break
+		}
+	}
+}
+----------------------------------------------------------------^
+
+
+
+==== Beispiele
+
+---- kontrollfluss/beispiel-fibonacci.go -----------------------v
+package main
+
+import "fmt"
+
+var a, b int
+
+func main() {
+	a, b = 0, 1
+	fmt.Printf("%v  ", a)
+	fmt.Printf("%v  ", b)
+	for i := 0; i < 32; i++ {
+		a, b = b, a+b
+		fmt.Printf("%v  ", b)
+	}
+	fmt.Printf("  ->  %v\n", float64(a)/float64(b))
+}
+----------------------------------------------------------------^
+
+---- kontrollfluss/beispiel-heron.go ---------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+const delta = 1e-6
+
+func Sqrt(x float64) float64 {
+	z, n := x, 0.0
+	for math.Abs(n-z) > delta {
+		n, z = z, z-(z*z-x)/(2*z)
+	}
+	return z
+}
+
+func main() {
+	const x = 2
+	mine, theirs := Sqrt(x), math.Sqrt(x)
+	fmt.Println(mine, theirs, mine-theirs)
+}
+----------------------------------------------------------------^
+
+
+
+=== Sprünge
+
+Verlassen oder wiederholen in einer Schleife:
+
+---- kontrollfluss/break-continue.go ---------------------------v
+package main
+
+import "fmt"
+
+var a, b int
+
+func main() {
+	i := 0
+	for {
+		i++
+		if i%2 == 0 {
+			continue
+		}
+		fmt.Println(i * i)
+		if i >= 10 {
+			break
+		}
+	}
+	fmt.Println("fertig.")
+}
+----------------------------------------------------------------^
+
+---- kontrollfluss/break-label.go ------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+aussen:
+	for {
+		for {
+			break aussen
+		}
+	}
+	fmt.Println("fertig.")
+}
+----------------------------------------------------------------^
+
+Es gibt auch eine Anweisung `goto` (hier nicht aufgeführt).
+
+
+
+=== Verzweigung
+
+---- kontrollfluss/if.go ---------------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func sqrt(x float64) string {
+	if x < 0 {
+		return sqrt(-x) + "i"
+	}
+	return fmt.Sprint(math.Sqrt(x))
+}
+
+func main() {
+	fmt.Println(sqrt(2), sqrt(-4))
+}
+----------------------------------------------------------------^
+
+Wie das `for` darf auch das `if` mit einer Zuweisung eingeleitet
+werden.
+
+---- kontrollfluss/if-mit-zuweisung.go -------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func pow(x, n, lim float64) float64 {
+	if v := math.Pow(x, n); v < lim {
+		return v
+	}
+	// v ist hier wieder weg.
+	return lim
+}
+
+func main() {
+	fmt.Println(
+		pow(3, 2, 10),
+		pow(3, 3, 20),
+	)
+}
+----------------------------------------------------------------^
+
+Ein `else` kann angefügt werden.
+
+---- kontrollfluss/if-else.go ----------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func pow(x, n, lim float64) float64 {
+	if v := math.Pow(x, n); v < lim {
+		return v
+	} else {
+		// Auch hier ist v vorhanden.
+		fmt.Printf("%g >= %g\n", v, lim)
+	}
+	return lim
+}
+
+func main() {
+	fmt.Println(
+		pow(3, 2, 10),
+		pow(3, 3, 20),
+	)
+}
+----------------------------------------------------------------^
+
+Nach `else` darf wieder ein `if` angefügt werden; dann muß nicht
+eingerückt werden.
+
+---- kontrollfluss/if-else-if.go -------------------------------v
+package main
+
+import "fmt"
+
+func vergleich(i, j int) {
+	if i < j {
+		fmt.Println(i, "kleiner", j)
+	} else if i > j {
+		fmt.Println(i, "größer", j)
+	} else {
+		fmt.Println(i, "gleich", j)
+	}
+}
+
+func main() {
+	vergleich( 3, 2)
+	vergleich( 3, 3)
+	vergleich( 3, 4)
+}
+----------------------------------------------------------------^
+
+
+
+=== Mehrfachverzweigung
+
+---- kontrollfluss/switch.go -----------------------------------v
+package main
+
+import (
+	"fmt"
+	"runtime"
+)
+
+func main() {
+	fmt.Print("Go runs on ")
+	switch os := runtime.GOOS; os {
+	case "darwin":
+		fmt.Println("OS X.")
+	case "linux":
+		fmt.Println("Linux.")
+	default:
+		// freebsd, openbsd,
+		// plan9, windows...
+		fmt.Printf("%s.\n", os)
+	}
+}
+----------------------------------------------------------------^
+
+Es muß nicht, wie in C, `break` geschrieben werden. Im Gegenteil:
+ein Übergang zum nächsten Fall muß explizit verlangt werden.
+
+---- kontrollfluss/switch-fallthrough.go -----------------------v
+package main
+
+import (
+	"fmt"
+	"runtime"
+)
+
+func main() {
+	fmt.Print("Go runs on ")
+	switch os := runtime.GOOS; os {
+	case "linux":
+		fmt.Println("Linux.")
+	case "darwin":
+		fmt.Print("commercial ")
+		fallthrough
+	case "openbsd", "freebsd":
+		fmt.Println("BSD-derivative.")
+	default:
+		// plan9, windows...
+		fmt.Printf("%s.\n", os)
+	}
+}
+----------------------------------------------------------------^
+
+Die Ausdrücke in `case` werden erst ausgewertet, wenn der Fall an
+der Reihe ist. (Eine Funktion würde nicht aufgerufen, wenn ein
+vorhergehender Fall erfolgreich geprüft wurde,
+
+---- kontrollfluss/switch-auswertung.go ------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	fmt.Println("When's Saturday?")
+	today := time.Now().Weekday()
+
+	switch time.Saturday {
+	case today + 0:
+		fmt.Println("Today.")
+	case today + 1:
+		fmt.Println("Tomorrow.")
+	case today + 2:
+		fmt.Println("In two days.")
+	default:
+		fmt.Println("Too far away.")
+	}
+}
+----------------------------------------------------------------^
+
+Ein `switch` ohne Angabe enthält implizit `true` und darf
+Auswertungen nach sich ziehen, von denen die erste zutrifft, die
+ebenfalls `true` ergibt.
+
+---- kontrollfluss/switch-ohne-variable.go ---------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	t := time.Now()
+	switch {
+	case t.Hour() < 12:
+		fmt.Println("Good morning!")
+	case t.Hour() < 17:
+		fmt.Println("Good afternoon.")
+	default:
+		fmt.Println("Good evening.")
+	}
+}
+----------------------------------------------------------------^
+
+
+
+=== Ausführung vertagen
+
+Ein `defer` vertagt die Ausführung einer Anweisung ans Ende der
+Funktion.
+
+---- kontrollfluss/defer.go ------------------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	defer fmt.Println("world")
+	fmt.Println("hello")
+	time.Sleep(3 * time.Second)
+}
+----------------------------------------------------------------^
+
+Die Argumente werden allerdings sofort ausgewertet.
+
+---- kontrollfluss/defer-argumente.go --------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	s := "world"
+	defer fmt.Println(s)
+	s = "hello"
+	fmt.Println(s)
+	time.Sleep(3 * time.Second)
+}
+----------------------------------------------------------------^
+
+Mehrere `defer` werden in umgekehrter Reihenfolge ausgeführt.
+
+---- kontrollfluss/defer-mehrfach.go ---------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("counting")
+
+	for i := 0; i < 10; i++ {
+		defer fmt.Println(i)
+	}
+
+	fmt.Println("done")
+}
+----------------------------------------------------------------^
+
+Zurückgestellte Aktionen werden trotz Panik ausgeführt.
+
+---- kontrollfluss/defer-panik.go ------------------------------v
+package main
+
+import "fmt"
+
+func force_panic() {
+	var a []int = make([]int,0)
+	fmt.Println(a[2])
+}
+
+func main() {
+	defer fmt.Println("Muß noch aufräumen...")
+	force_panic()
+	fmt.Println("Tschüß!")
+}
+----------------------------------------------------------------^
+
+Eine Panik kann übrigens herbeigeführt werden.
+
+---- kontrollfluss/panik.go ------------------------------------v
+package main
+
+func main() {
+	panic("stop")
+}
+----------------------------------------------------------------^
+
+Eine Panik liefert die Aufrufkette.
+
+---- kontrollfluss/panik-kaskade.go ----------------------------v
+package main
+
+func f() {
+	panic("stop")
+}
+func g() {
+	f()
+}
+func h() {
+	g()
+}
+func main() {
+	h()
+}
+----------------------------------------------------------------^
+
+Eine Panik kann abgefangen werden.
+
+---- kontrollfluss/panik-recover.go ----------------------------v
+package main
+
+import "fmt"
+
+func catchit() {
+	if r := recover(); r != nil {
+		fmt.Println("Fehler:", r)
+	} else {
+		fmt.Println("Alles sauber.")
+	}
+}
+
+func main() {
+	defer catchit()
+	panic("Arrrrgh!")
+}
+----------------------------------------------------------------^
+
+
+
+== Abgeleitete Typen
+
+
+
+=== Zeiger
+
+
+---- typen/zeiger.go -------------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	i, j := 42, 2701
+
+	p := &i
+	fmt.Println(*p)
+	*p = 21
+	fmt.Println(i)
+
+	p = &j
+	*p /= 37
+	fmt.Println(j)
+}
+----------------------------------------------------------------^
+
+Nach einer Typendeklaration steht der Zeiger zuerst auf `nil`.
+
+---- typen/zeiger-deklaration.go -------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var i int
+	var p *int
+	fmt.Printf("%v (%T)\n", p, p)
+	p = &i
+	fmt.Printf("%v (%T)\n", p, p)
+}
+----------------------------------------------------------------^
+
+Der Zeiger kann auch ungültig gemacht werden, indem er auf `nil`
+gesetzt wird.
+
+---- typen/zeiger-nil.go ---------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var i int
+	p := &i
+	fmt.Printf("%v (%T)\n", p, p)
+	p = nil
+	fmt.Printf("%v (%T)\n", p, p)
+}
+----------------------------------------------------------------^
+
+Vorsicht: Auslesen des Nullzeigers oder gar Zuweisung auf dessen
+Adresse erzeugt das Signal SEGV(11) und damit einen sofortigen
+Abbruch.
+
+---- typen/zeiger-segv.go --------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var p *int
+	p = nil
+	*p = 555 // Absturz
+	fmt.Printf("%v\n", *p) // Absturz
+}
+----------------------------------------------------------------^
+
+Vorsicht: Zeiger auf nicht mehr bestehende Objekte sind schwierig,
+denn ein eigentlich aufgelöstes Objekt muß weiterleben.
+
+---- typen/zeiger-aufgeloestes.go ------------------------------v
+package main
+
+import "fmt"
+
+func doubled(n int) *int {
+	var i int
+	i = n * 2
+	return &i
+}
+
+func main() {
+	p := doubled(7)
+	fmt.Printf("p: %v an %p (%T)\n", *p, p, p)
+	q := doubled(9)
+	fmt.Printf("q: %v an %p (%T)\n", *q, q, q)
+}
+----------------------------------------------------------------^
+
+Vergleiche dazu das Verhalten von C in `bsp/deadptr.c`.
+
+Man kann sich anzeigen lassen, was auf den Heap verlagert wurde.
+
+    go build -gcflags -m typen/zeiger-zuheap.go
+
+---- typen/zeiger-zuheap.go ------------------------------------v
+package main
+
+import "fmt"
+
+func quintupled(n int) *int {
+	var i, j int
+	i = n * 2
+	j = n * 3
+	i += j
+	return &i
+}
+
+func quintupled_true_story(n int) *int {
+	var i, j int
+	i = n * 2
+	j = n * 3
+	i += j
+
+	var p_tmp *int
+	p_tmp = new(int)
+	*p_tmp = i
+	return p_tmp
+}
+
+func main() {
+	p := quintupled(7)
+	fmt.Printf("p: %v an %p (%T)\n", *p, p, p)
+	q := quintupled(9)
+	fmt.Printf("q: %v an %p (%T)\n", *q, q, q)
+}
+----------------------------------------------------------------^
+
+Ein Objekt kann auch auf den Heap gezwungen werden, indem ein
+Zeiger mit `new` gesetzt wird. Das Objekt wird dann mit Null
+initialisiert.
+
+---- typen/zeiger-new.go ---------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var p *int
+	p = new(int)
+	fmt.Printf("p: %v an %p (%T)\n", *p, p, p)
+}
+----------------------------------------------------------------^
+
+
+
+=== Strukturen
+
+---- typen/struct.go -------------------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X int
+	Y int
+}
+
+func main() {
+	fmt.Println(Vertex{1, 2})
+}
+----------------------------------------------------------------^
+
+Nicht nur Strukturen, auch deren Elemente werden nur exportiert,
+wenn sie mit Großbuchstaben anfangen.
+
+---- typen/struct-felder.go ------------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X int
+	Y int
+}
+
+func main() {
+	v := Vertex{1, 2}
+	v.X = 4
+	fmt.Println(v.X)
+}
+----------------------------------------------------------------^
+
+Auch einzelne Felder dürfen gesetzt werden. Die anderen werden
+dann automatisch auf Nullwerte gesetzt.
+
+---- typen/struct-festwerte.go ---------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X, Y int
+}
+
+var (
+	v1 = Vertex{1, 2}
+	v2 = Vertex{Y: 1}  // X:0 ist implizit
+	v3 = Vertex{}      // X:0 und Y:0
+)
+
+func main() {
+	fmt.Println(v1, v2, v3)
+}
+----------------------------------------------------------------^
+
+Eine Struktur kann auch über Zeiger allein gebildet und
+angesprochen werden.
+
+---- typen/struct-new.go ---------------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X, Y int
+}
+
+func main() {
+	var pv *Vertex
+
+	pv = new(Vertex)
+	fmt.Println(pv)
+
+	pv = &Vertex{} // impliziert new()
+	fmt.Println(pv)
+}
+----------------------------------------------------------------^
+
+
+
+==== Unbenannte Strukturen und -elemente
+
+Man darf auch Strukturen verwenden, ohne ihnen mit `type` einen
+Namen zu geben.
+
+---- typen/struct-unbenannt.go ---------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	s := struct {
+		anzahl int
+		text   string
+	}{3, "hi"}
+	fmt.Println(s)
+}
+----------------------------------------------------------------^
+
+Man muß den Elementen nicht unbedingt einen Namen geben.
+
+---- typen/struct-element-unbenannt.go -------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	s := struct {
+		int
+		string
+	}{3, "hi"}
+	fmt.Println(s)
+	fmt.Println(s.int)
+	fmt.Println(s.string)
+}
+----------------------------------------------------------------^
+
+Elemente der Unterstruktur dürfen dann direkt angesprochen werden.
+
+---- typen/struct-unterstruktur-unbenannt.go -------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X int
+	Y int
+}
+
+type Mark struct {
+	Vertex
+	Title string
+}
+
+func main() {
+	m := Mark{Vertex{1,2}, "A"}
+	fmt.Println(m)
+	fmt.Println(m.X)
+
+	m = Mark{Vertex:Vertex{X:2,Y:3},Title:"A"}
+	fmt.Println(m)
+	fmt.Println(m.X)
+
+	m = Mark{Title:"A"}
+	fmt.Println(m)
+	fmt.Println(m.X)
+	fmt.Println(m.Vertex.X)
+}
+----------------------------------------------------------------^
+
+
+
+==== Zeiger auf Strukturen
+
+Strukturen können auch über Zeiger angesprochen werden.
+Eine explizite Referenzierung (Sternchen) ist nicht notwendig.
+
+---- typen/struct-zeiger.go ------------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X int
+	Y int
+}
+
+func main() {
+	v := Vertex{1, 2}
+	p := &v
+
+	(*p).X = 20
+	p.X = 20 // gleichwertige Schreibweise
+
+	fmt.Println(v)
+}
+----------------------------------------------------------------^
+
+Es ist ein Unterschied, ob eine Struktur als ganzes oder über
+einen Zeiger an eine Funktion übergeben wird.
+
+Veränderungen am Original-Objekt finden nur statt, wenn der Zeiger
+übergeben wird.
+
+---- typen/struct-zeiger-param.go ------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X, Y int
+}
+
+func dontsetit(v Vertex) {
+	v.X, v.Y = 33, 44
+}
+
+func setit(p *Vertex) {
+	p.X, p.Y = 55, 66
+}
+
+func main() {
+	var v = Vertex{1, 2}
+
+	fmt.Println(v)
+	dontsetit(v)
+	fmt.Println(v)
+	setit(&v)
+	fmt.Println(v)
+}
+----------------------------------------------------------------^
+
+Vorsicht: Wenn ein Objekt kopiert wird, das Strings enthält,
+werden beim Ändern die Zeiger umgesetzt und nicht die Strings
+verändert.
+
+---- typen/struct-zeiger-string.go -----------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X, Y int
+}
+
+type Mark struct {
+	Vertex
+	Title string
+}
+
+func dontsetit(m Mark) {
+	m.X, m.Y = 33, 44
+	fmt.Printf("%v %T\n", &m.Title, &m.Title)
+	m.Title = "bar"
+	fmt.Printf("%v %T\n", &m.Title, &m.Title)
+}
+
+func setit(m *Mark) {
+	m.X, m.Y = 55, 66
+	fmt.Printf("%v %T\n", &m.Title, &m.Title)
+	m.Title = "baz"
+	fmt.Printf("%v %T\n", &m.Title, &m.Title)
+}
+
+func main() {
+	var m = Mark{Title:"foo"}
+
+	fmt.Println(m)
+	dontsetit(m)
+	fmt.Println(m)
+	setit(&m)
+	fmt.Println(m)
+}
+----------------------------------------------------------------^
+
+Wenn ein Objekt Zeiger enthält, werden dessen Inhalte nicht
+kopiert, und unter Umständen auch Werte außerhalb verändert.
+
+---- typen/struct-zeiger-objekt.go -----------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	X, Y int
+}
+
+type Mark struct {
+	V	  *Vertex
+	Title string
+}
+
+func dontsetit(m Mark) {
+	m.V.X, m.V.Y = 33, 44 // Setzt es trotzdem!
+	m.Title = "bar"
+}
+
+func setit(m *Mark) {
+	m.V.X, m.V.Y = 55, 66
+	m.Title = "baz"
+}
+
+func main() {
+	var m = Mark{V:&Vertex{1,2},Title:"foo"}
+
+	fmt.Println(m, m.V)
+	dontsetit(m)
+	fmt.Println(m, m.V)
+	setit(&m)
+	fmt.Println(m, m.V)
+}
+----------------------------------------------------------------^
+
+
+
+=== Arrays und Slices
+
+Ein Array wird mit der eckigen Klammer gebildet. Die Dimension muß
+angegeben werden.
+
+---- typen/array.go --------------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var a [2]string
+	a[0] = "Hello"
+	a[1] = "World"
+	fmt.Println(a[0], a[1])
+	fmt.Println(a)
+}
+----------------------------------------------------------------^
+
+Auch bei der Initialisierung kann die Größe angegeben werden.
+
+---- typen/array-initialisiert.go ------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+
+	var a [2]string
+	a[0] = "Hello"
+	a[1] = "World"
+	fmt.Println(a[0], a[1])
+	fmt.Println(a)
+
+	var b [3]string = [3]string{"foo", "bar", "baz"}
+	fmt.Println(b[0], b[1])
+	fmt.Println(b)
+
+	primes := [6]int{2, 3, 5, 7, 11, 13}
+	fmt.Println(primes)
+	fmt.Printf("%v (%T)\n", primes, primes)
+}
+----------------------------------------------------------------^
+
+Die Größe kann auch automatisch ermittelt werden. Eine Länge von
+drei Punkten (`...`) bedeutet, daß die Länge aus der Anzahl der
+Elemente in der Klammer `{}` bestimmt wird.
+
+---- typen/array-init-auto.go ----------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+
+	var b [3]string = [...]string{"foo", "bar", "baz"}
+	fmt.Println(b)
+	fmt.Printf("%v (%T)\n", b, b)
+
+	primes := [...]int{2, 3, 5, 7, 11, 13}
+	fmt.Println(primes)
+	fmt.Printf("%v (%T)\n", primes, primes)
+}
+----------------------------------------------------------------^
+
+Theoretisch kann ein ganzes Array aus einer Funktion zurückgegeben
+werden, dann wird aber alles kopiert. Mit einem Zeiger wird das
+Objekt aus dem Innern der Funktion weiterleben.
+
+---- typen/array-rueckgabe.go ----------------------------------v
+package main
+
+import "fmt"
+
+func objdummies() [3]string {
+	var b [3]string = [...]string{"foo", "bar", "baz"}
+	return b
+}
+
+func ptrdummies() *[3]string {
+	var b [3]string = [...]string{"FOO", "BAR", "BAZ"}
+	return &b
+}
+
+func main() {
+	a := objdummies()
+	fmt.Printf("%v (%T)\n", a, a)
+	fmt.Println(a)
+
+	b := ptrdummies()
+	fmt.Printf("%v (%T)\n", b, b)
+	fmt.Printf("%v (%T)\n", *b, *b)
+	fmt.Println(*b)
+}
+----------------------------------------------------------------^
+
+Demonstration bei Veränderung der Inhalte:
+
+---- typen/array-rueckgabe-anzeige.go --------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func objdummies() [3]string {
+	var b [3]string = [...]string{"foo", "bar", "baz"}
+	go func() {
+		time.Sleep(2 * time.Second)
+		b[1] = "BAR"
+	}()
+	return b
+}
+
+func ptrdummies() *[3]string {
+	var b [3]string = [...]string{"FOO", "BAR", "BAZ"}
+	go func() {
+		time.Sleep(2 * time.Second)
+		b[1] = "Bar"
+	}()
+	return &b
+}
+
+func main() {
+	a := objdummies()
+	fmt.Printf("%v (%T)\n", a, a)
+	fmt.Println(a)
+
+	b := ptrdummies()
+	fmt.Printf("%v (%T)\n", b, b)
+	fmt.Printf("%v (%T)\n", *b, *b)
+	fmt.Println(*b)
+
+	time.Sleep(5 * time.Second)
+	fmt.Printf("%v (%T)\n", a, a) // hat sich nicht verändert
+	fmt.Printf("%v (%T)\n", b, b) // hat sich verändert
+}
+----------------------------------------------------------------^
+
+
+
+==== Slices
+
+Statt eines Zeigers auf ein Array benutzt man Slices. Diese
+enthalten ein wenig mehr Information.
+
+---- typen/slices.go -------------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	primes := [6]int{2, 3, 5, 7, 11, 13}
+	fmt.Printf("%v (%T)\n", primes, primes)
+
+	var s []int = primes[1:4]
+	fmt.Printf("%v (%T)\n", s, s)
+	fmt.Println(s)
+}
+----------------------------------------------------------------^
+
+Zuweisungen auf Slices betreffen auch das darunterliegende Array
+sowie alle anderen Slices, die auf das Array zeigen.
+
+---- typen/slices-zeiger.go ------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	names := [4]string{
+		"John",
+		"Paul",
+		"George",
+		"Ringo",
+	}
+	fmt.Println(names)
+
+	a := names[0:2]
+	b := names[1:3]
+	fmt.Println(a, b)
+	fmt.Println()
+
+	b[0] = "XXX"
+	fmt.Println(b)
+	fmt.Println(names)
+	fmt.Println(a)
+}
+----------------------------------------------------------------^
+
+Festwerte dürfen auch direkt mit Slices gebildet werden. Dann gibt
+es nirgends eine Array-Variable.
+
+---- typen/slices-festwerte.go ---------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	q := []int{2, 3, 5, 7, 11, 13}
+	fmt.Println(q)
+	fmt.Printf("%T\n", q)
+	fmt.Println()
+
+	r := []bool{true, false, true, true, false, true}
+	fmt.Println(r)
+	fmt.Printf("%T\n", r)
+	fmt.Println()
+
+	s := []struct {
+		i int
+		b bool
+	}{
+		{2, true},
+		{3, false},
+		{5, true},
+		{7, true},
+		{11, false},
+		{13, true},
+	}
+	fmt.Println(s)
+	fmt.Printf("%T\n", s)
+	fmt.Println()
+}
+----------------------------------------------------------------^
+
+Die Grenzen in den eckigen Klammern können weggelassen werden,
+dann ist jeweils der Anfang oder das Ende gemeint.
+
+---- typen/slices-grenzen.go -----------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	s := []int{2, 3, 5, 7, 11, 13}
+
+	s = s[1:4]
+	fmt.Println(s)
+
+	s = s[:2]
+	fmt.Println(s)
+
+	s = s[1:]
+	fmt.Println(s)
+}
+----------------------------------------------------------------^
+
+Eine Slice hat:
+
+  - Einen Anfangspunkt innerhalb des Arrays,
+  - eine Länge, wie viele Elemente gemeint sind und
+  - eine Kapazität, d. h. wie lang das originale Array war.
+
+---- typen/slices-len-cap.go -----------------------------------v
+package main
+
+import "fmt"
+
+func printSlice(s []int) {
+	fmt.Printf("len=%d cap=%d %v\n", len(s), cap(s), s)
+}
+
+func main() {
+	s := []int{2, 3, 5, 7, 11, 13}
+	printSlice(s)
+
+	s = s[:0]
+	printSlice(s)
+
+	s = s[:4]
+	printSlice(s)
+
+	s = s[2:]
+	printSlice(s)
+}
+----------------------------------------------------------------^
+
+Slice mit Dreifachindex setzt Kapazität.
+
+---- typen/slices-dreifach.go ----------------------------------v
+package main
+
+import "fmt"
+
+func printSlice(s []int) {
+	fmt.Printf("len=%d cap=%d %v\n", len(s), cap(s), s)
+}
+
+func main() {
+	s := []int{2, 3, 5, 7, 11, 13}
+	printSlice(s)
+
+	s = s[:0:5]
+	// Ab hier kann auf die 13 nicht mehr zugegriffen werden.
+	printSlice(s)
+
+	s = s[:4]
+	printSlice(s)
+
+	s = s[2:]
+	printSlice(s)
+}
+----------------------------------------------------------------^
+
+Rückgabe eines Arrays aus einer Funktion erfolgt besser als mit
+einem Zeiger mit einer Slice.
+
+---- typen/slices-rueckgabe.go ---------------------------------v
+package main
+
+import "fmt"
+
+func objdummies() [3]string {
+	var b [3]string = [...]string{"foo", "bar", "baz"}
+	return b
+}
+
+func slcdummies() []string {
+	var b [3]string = [...]string{"FOO", "BAR", "BAZ"}
+	return b[:]
+}
+
+func main() {
+	a := objdummies()
+	fmt.Printf("%v (%T)\n", a, a)
+
+	b := slcdummies()
+	fmt.Printf("%v (%T)\n", b, b)
+}
+----------------------------------------------------------------^
+
+---- typen/slices-rueckgabe-anzeige.go -------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func objdummies() [3]string {
+	var b [3]string = [...]string{"foo", "bar", "baz"}
+	go func() {
+		time.Sleep(2 * time.Second)
+		b[1] = "BAR"
+	}()
+	return b
+}
+
+func slcdummies() []string {
+	var b [3]string = [...]string{"FOO", "BAR", "BAZ"}
+	go func() {
+		time.Sleep(2 * time.Second)
+		b[1] = "Bar"
+	}()
+	return b[:]
+}
+
+func main() {
+	a := objdummies()
+	fmt.Printf("%v (%T)\n", a, a)
+	fmt.Println(a)
+
+	b := slcdummies()
+	fmt.Printf("%v (%T)\n", b, b)
+	fmt.Println(b)
+
+	time.Sleep(5 * time.Second)
+	fmt.Printf("%v (%T)\n", a, a) // hat sich nicht verändert
+	fmt.Printf("%v (%T)\n", b, b) // hat sich verändert
+}
+----------------------------------------------------------------^
+
+Wird eine Slice aus einer Funktion zurückgegeben, bleibt die
+Kapazität der Ausgangsarrays erhalten. Dies bedeutet aber auch,
+daß das ganze Array erhalten bleibt.
+
+---- typen/slices-rueckgabe-kapazitaet.go ----------------------v
+package main
+
+import "fmt"
+
+func slcdummies() []string {
+	var b [3]string = [...]string{"FOO", "BAR", "BAZ"}
+	return b[:1]
+}
+
+func main() {
+	b := slcdummies()
+	fmt.Printf("%v (%T)\n", b, b)
+	fmt.Printf("len=%d cap=%d\n", len(b), cap(b))
+}
+----------------------------------------------------------------^
+
+
+
+==== Verschachtelte Arrays und Slices
+
+Arrays dürfen selbstverständlich wiederum Arrays enthalten.
+
+---- typen/slices-mit-slice.go ---------------------------------v
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+func main() {
+	board := [][]string{
+		[]string{"_", "_", "_"},
+		[]string{"_", "_", "_"},
+		[]string{"_", "_", "_"},
+	}
+
+	board[0][0] = "X"
+	board[2][2] = "O"
+	board[1][2] = "X"
+	board[1][0] = "O"
+	board[0][2] = "X"
+
+	for i := 0; i < len(board); i++ {
+		fmt.Printf("%s\n", strings.Join(board[i], " "))
+	}
+}
+----------------------------------------------------------------^
+
+
+
+==== Dynamische Arrays
+
+Ohne Initialisierung sind Slices ähnlich wie Zeiger `nil`.
+
+---- typen/slices-nil.go ---------------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var s []int
+	fmt.Println(s, len(s), cap(s))
+	if s == nil {
+		fmt.Println("nil!")
+	}
+}
+----------------------------------------------------------------^
+
+Denn Slices können auch dynamisch gebildet werden, d. h. ihre
+Größe ist bei der Übersetzung noch nicht bekannt.
+
+---- typen/slices-make.go --------------------------------------v
+package main
+
+import "fmt"
+
+func printSlice(s string, x []int) {
+	fmt.Printf("%s len=%d cap=%d %v\n",
+		s, len(x), cap(x), x)
+}
+
+func main() {
+	a := make([]int, 5)
+	printSlice("a", a)
+
+	b := make([]int, 0, 5)  // mit Kapazität
+	printSlice("b", b)
+
+	c := b[:2]
+	printSlice("c", c)
+
+	d := c[2:5]
+	printSlice("d", d)
+}
+----------------------------------------------------------------^
+
+
+
+==== Erweitern von Slice-Inhalten
+
+---- typen/slices-append.go ------------------------------------v
+package main
+
+import "fmt"
+
+func printSlice(s []int) {
+	fmt.Printf("len=%d cap=%d %v\n", len(s), cap(s), s)
+}
+
+func main() {
+	var s []int
+	printSlice(s)
+
+	s = append(s, 0)
+	printSlice(s)
+
+	s = append(s, 1)
+	printSlice(s)
+
+	s = append(s, 2, 3, 4) // Kapazität wächst mehr
+	printSlice(s)
+}
+----------------------------------------------------------------^
+
+
+
+==== Iterieren durch Slices
+
+Es gibt eine eigenes Anweisung `for` für Slices.
+
+---- typen/slices-range.go -------------------------------------v
+package main
+
+import "fmt"
+
+var pow = []int{1, 2, 4, 8, 16, 32, 64, 128}
+
+func main() {
+	for i, v := range pow {
+		fmt.Printf("2**%d = %d\n", i, v)
+	}
+}
+----------------------------------------------------------------^
+
+Wird der Wert der Elemente nicht benötigt, muß er auch nicht
+zugewiesen werden.
+
+---- typen/slices-range-fortsetzung.go -------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	pow := make([]int, 10)
+	for i := range pow {
+		pow[i] = 1 << uint(i) // == 2**i
+	}
+	for _, value := range pow {
+		fmt.Printf("%d\n", value)
+	}
+}
+----------------------------------------------------------------^
+
+Beispiel: Slice, die Slices enthält.
+
+---- typen/slices-verschachtelt.go -----------------------------v
+package main
+
+import "fmt"
+
+func Pic(dx, dy uint) [][]uint8 {
+
+	p := make([][]uint8, dy)
+	for i := range p {
+		p[i] = make([]uint8, dx)
+	}
+
+	for y, row := range p {
+		for x := range row {
+			row[x] = uint8(x * y)
+		}
+	}
+
+	return p
+}
+
+func main() {
+	p := Pic( 8, 9)
+	for _, row := range p {
+		fmt.Println( row)
+	}
+}
+----------------------------------------------------------------^
+
+
+
+==== Slice-Tricks
+
+Array kopieren:
+
+---- typen/slices-array-kopieren.go ----------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	arr := []int{1, 2, 3}
+	tmp := make([]int, len(arr))
+	copy(tmp, arr)
+	fmt.Println(tmp)
+}
+----------------------------------------------------------------^
+
+---- typen/slices-array-kopieren-append.go ---------------------v
+package main
+
+import "fmt"
+
+func main() {
+	arr := []int{1, 2, 3}
+	tmp := append([]int(nil), arr...)
+	fmt.Println(tmp)
+}
+----------------------------------------------------------------^
+
+Vorsicht: Ein Array bleibt im Speicher, solange eine Slice auf es
+zeigt. Man fertigt besser eine Kopie an, wenn das äußere Array zu
+groß ist.
+
+---- typen/slices-array-bleibt.go ------------------------------v
+func CopyDigits(filename string) []byte {
+	b, _ := ioutil.ReadFile(filename)
+	b = digitRegexp.Find(b)
+	// Ohne diese Kopie bleibt die ganze Datei im Speicher.
+	c := make([]byte, len(b))
+	copy(c, b)
+	//
+	return c
+}
+----------------------------------------------------------------^
+
+Weitere Tricks:
+
+  https://github.com/golang/go/wiki/SliceTricks?source=post_page-----fa8d32cd2b7c----------------------
+
+
+
+=== Maps
+
+Maps haben feste Typen für die Schlüssel und für die Werte.
+
+---- typen/maps.go ---------------------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	Lat, Long float64
+}
+
+var m map[string]Vertex
+
+func main() {
+	m = make(map[string]Vertex)
+	m["Bell Labs"] = Vertex{40.68433, -74.39967}
+	fmt.Println(m["Bell Labs"])
+}
+----------------------------------------------------------------^
+
+---- typen/maps-festwerte.go -----------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	Lat, Long float64
+}
+
+var m = map[string]Vertex{
+	"Bell Labs": Vertex{40.68433,  -74.39967},
+	"Google":    Vertex{37.42202, -122.08408},
+}
+
+func main() {
+	fmt.Println(m)
+}
+----------------------------------------------------------------^
+
+Komprimierte Schreibweise:
+
+---- typen/maps-festwerte-forsetzung.go ------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	Lat, Long float64
+}
+
+var m = map[string]Vertex{
+	"Bell Labs": {40.68433, -74.39967},
+	"Google":    {37.42202, -122.08408},
+}
+
+func main() {
+	fmt.Println(m)
+}
+----------------------------------------------------------------^
+
+Statt mit `make` dürfen Maps auch mit dem leeren Objekt
+initialisiert werden.
+
+---- typen/maps-init-leer.go -----------------------------------v
+package main
+
+import "fmt"
+
+type Vertex struct {
+	Lat, Long float64
+}
+
+func main() {
+	var m = map[string]Vertex{}
+	m["Bell Labs"] = Vertex{40.68433, -74.39967}
+	m["Google"] = Vertex{37.42202, -122.08408}
+	fmt.Println(m)
+}
+----------------------------------------------------------------^
+
+Zuweisungen in Maps:
+
+---- typen/maps-zuweisung.go -----------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	m := make(map[string]int)
+
+	m["Answer"] = 42
+	fmt.Println("The value:", m["Answer"])
+
+	m["Answer"] = 48
+	fmt.Println("The value:", m["Answer"])
+
+	delete(m, "Answer")
+	fmt.Println("The value:", m["Answer"])
+
+	v, ok := m["Answer"]
+	fmt.Println("The value:", v, "Present?", ok)
+}
+----------------------------------------------------------------^
+
+Iterieren durch Maps: `range` durchläuft die Schlüssel.
+
+---- typen/maps-iterieren.go -----------------------------------v
+package main
+
+import "fmt"
+
+var m = map[string]int{
+	"foo": 33,
+	"bar": 44,
+	"baz": 55,
+}
+
+func main() {
+	for k := range m {
+		fmt.Println(k)
+	}
+	for k, v := range m {
+		fmt.Printf("%v: %v\n", k, v)
+	}
+}
+----------------------------------------------------------------^
+
+Vorsicht: Die Reihenfolge, in der die Schlüssel hinzugefügt
+wurden, bleibt _nicht_ erhalten, wie dies in vielen interpretierten
+Sprachen (Python, Ruby) der Fall ist.
+
+
+Beispiel: Duplikate entfernen.
+
+---- typen/maps-beispiel-duplikate.go --------------------------v
+package main
+
+import "fmt"
+
+func WordUniq(s []string) map[string]bool {
+	m := make(map[string]bool)
+	for _, f := range s {
+		m[f] = true
+	}
+	return m
+}
+
+func main() {
+	m := WordUniq([]string{"foo", "bar", "foo", "baz", "foo", "bar"})
+	fmt.Println(m)
+}
+----------------------------------------------------------------^
+
+Beispiel: Wörter zählen.
+
+---- typen/maps-beispiel-woerter.go ----------------------------v
+package main
+
+import "fmt"
+
+func WordCount(s []string) map[string]int {
+	m := make(map[string]int)
+	for _, f := range s {
+		m[f]++
+	}
+	return m
+}
+
+func main() {
+	m := WordCount([]string{"foo", "bar", "foo", "baz", "foo", "bar"})
+	fmt.Println(m)
+}
+----------------------------------------------------------------^
+
+Eine Slice mit den Schlüsseln erzeugen:
+
+---- typen/maps-schluessel.go ----------------------------------v
+package main
+
+import "fmt"
+
+var m = map[string]int{
+	"foo": 33,
+	"bar": 44,
+	"baz": 55,
+	"xxx": 66,
+	"yyy": 77,
+}
+
+func main() {
+	m["baz"] = 99
+	keys := make([]string, 0, len(m)) // Kapazität hier schon bekannt
+	for k := range m {
+		keys = append(keys, k)
+		fmt.Println(cap(keys))
+	}
+	fmt.Println(keys)
+}
+----------------------------------------------------------------^
+
+Duplikate aus einer Liste entfernen:
+
+---- typen/maps-slice-eindeutig.go -----------------------------v
+package main
+
+import "fmt"
+
+func unique(s []int) []int {
+	seen := make(map[int]bool)
+	res := []int{}
+	for _, key := range s {
+		if _, value := seen[key]; !value {
+			seen[key] = true
+			res = append(res, key)
+		}
+	}
+	return res
+}
+
+func main() {
+	s := []int{1, 5, 3, 6, 9, 9, 4, 2, 3, 1, 5}
+	fmt.Println(s)
+	u := unique(s)
+	fmt.Println(u)
+}
+----------------------------------------------------------------^
+
+Variante: Zuerst eine Map erzeugen, dann die Schlüssel sammeln.
+
+---- typen/maps-slice-eindeutig-alternativ.go ------------------v
+package main
+
+import "fmt"
+
+func unique(s []int) []int {
+	seen := make(map[int]bool)
+	for _, key := range s {
+		seen[key] = true
+	}
+
+	res := make([]int, 0, len(seen))
+	for k := range seen {
+		res = append(res, k)
+	}
+	return res
+}
+
+func main() {
+	s := []int{1, 5, 3, 6, 9, 9, 4, 2, 3, 1, 5}
+	fmt.Println(s)
+	u := unique(s)
+	fmt.Println(u)
+}
+----------------------------------------------------------------^
+
+
+
+=== Funktionen als Objekte
+
+Funktionen sind selbst Objekte und könen Variablen zugewiesen
+werden. Sie können auch als Parameter übergeben werden.
+
+---- typen/funktionen-objekte.go -------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func compute(fn func(float64, float64) float64) float64 {
+	return fn(3, 4)
+}
+
+func average(x, y float64) float64 {
+	return (x + y) / 2
+}
+
+func geommean(x, y float64) float64 {
+	return math.Sqrt(x * y)
+}
+
+func harmmean(x, y float64) float64 {
+	return 1.0/(1.0/x + 1.0/y)
+}
+
+func main() {
+	fmt.Println(compute(average))
+	avg := average
+	fmt.Println(compute(avg))
+	avg = geommean
+	fmt.Println(compute(avg))
+	avg = harmmean
+	fmt.Println(compute(avg))
+	fmt.Println(compute(math.Pow))
+}
+----------------------------------------------------------------^
+
+Man darf auch unbenannte Funktionen konstruieren.
+
+---- typen/funktionen-unbenannt.go -----------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	f := func() {
+		fmt.Println("Hello, here is an anonymous function!")
+	}
+	fmt.Printf("%v (%T)\n", f, f)
+	f()
+}
+----------------------------------------------------------------^
+
+Diese unbenannten Funktionen dürfen genauso verwendet werden wie
+die benannten.
+
+---- typen/funktionen-objekte-unbenannt.go ---------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func compute(fn func(float64, float64) float64) float64 {
+	return fn(3, 4)
+}
+
+func average(x, y float64) float64 {
+	return (x + y) / 2
+}
+
+func main() {
+
+	hypot := func(x, y float64) float64 {
+		return math.Sqrt(x*x + y*y)
+	}
+	fmt.Println(hypot(5, 12))
+
+	fmt.Println("--------------------------------")
+
+	fmt.Println(compute(hypot))
+	fmt.Println(compute(average))
+	fmt.Println(compute(math.Pow))
+}
+----------------------------------------------------------------^
+
+Selbstverständlich darf auch eine unbenannte Funktion einen Wert
+zurückgeben.
+
+---- typen/funktionen-unbenannt-rueckgabe.go -------------------v
+package main
+
+import "fmt"
+
+func buildfn() (func() string) {
+	ret := func() string {
+		fmt.Println("Hello, here is an anonymous function!")
+		return "hi"
+	}
+	return ret
+}
+
+func main() {
+	f := buildfn()
+	fmt.Printf("%v (%T)\n", f, f)
+	fmt.Printf("%v (%T)\n", f(), f())
+}
+----------------------------------------------------------------^
+
+Ohne Initialisierung ist eine Funktion `nil`.
+
+---- typen/funktionen-nil.go -----------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var f func() string
+	fmt.Printf("%v (%T)\n", f, f)
+	if false {
+		fmt.Printf("%v (%T)\n", f(), f()) // hier ein Fehler
+	}
+	f = func() string {
+		fmt.Println("Hello, here is an anonymous function!")
+		return "hi"
+	}
+	fmt.Printf("%v (%T)\n", f, f)
+	fmt.Printf("%v (%T)\n", f(), f())
+}
+----------------------------------------------------------------^
+
+Beispiel: Nochmal Endrekursion.
+
+---- typen/funktionen-endrekursion.go --------------------------v
+package main
+
+import "fmt"
+
+func factorial_endrek(n int) int {
+	var fi func(int, int) int
+	fi = func(total, n int) int {
+		if n == 0 {
+			return total
+		} else {
+			return fi(total*n, n-1)
+		}
+	}
+	return fi(1, n)
+}
+
+func main() {
+	fmt.Println(factorial_endrek(6))
+}
+----------------------------------------------------------------^
+
+
+
+==== Closures
+
+Funktionen, die innerhalb einer anderen Funktion definiert werden,
+übernehmen und behalten deren Namensraum und deren Variablen.
+
+---- typen/funktionen-closure.go -------------------------------v
+package main
+
+import "fmt"
+
+func hold_a_sum() func(int) {
+	sum := 0
+	return func(x int) {
+		sum += x
+		fmt.Println("Die Summe ist jetzt:", sum)
+	}
+}
+
+func main() {
+	s := hold_a_sum()
+	s( 3)
+	s( 4)
+	s( 7)
+}
+----------------------------------------------------------------^
+
+Mehrfache Aufrufe bilden mehrere Namensräume.
+
+---- typen/funktionen-closure-mehrere.go -----------------------v
+package main
+
+import "fmt"
+
+func hold_a_sum(n string) func(int) {
+	sum := 0
+	return func(x int) {
+		sum += x
+		fmt.Println("Die Summe", n, "ist jetzt:", sum)
+	}
+}
+
+func main() {
+	s := hold_a_sum( "A")
+	t := hold_a_sum( "B")
+	s( 3)
+	t( 33)
+	s( 4)
+	t( 44)
+	s( 7)
+	t( 77)
+}
+----------------------------------------------------------------^
+
+Beipsiel: Nochmal Fibonacci.
+
+---- typen/funktionen-closure-finonacci.go ---------------------v
+package main
+
+import "fmt"
+
+func fibonacci() func() int {
+	a, b := 0, 1
+	return func() int {
+		a, b = b, a+b
+		return a
+	}
+}
+
+func main() {
+	f := fibonacci()
+	for i := 0; i < 10; i++ {
+		fmt.Println(f())
+	}
+}
+----------------------------------------------------------------^
+
+
+
+== Methoden
+
+Strukturen können als Wert- oder als Zeigerparameter an Funktionen
+übergeben werden.
+
+---- methoden/ohne-methode.go ----------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type Vertex struct {
+	X, Y float64
+}
+
+func Abs(v Vertex) float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+func Scale(v *Vertex, f float64) {
+	v.X *= f
+	v.Y *= f
+}
+
+func main() {
+	v := Vertex{3, 4}
+	Scale(&v, 10)
+	fmt.Println(Abs(v))
+}
+----------------------------------------------------------------^
+
+Ist die Struktur der erste Parameter, kann sie als sogenannter
+Empfänger („Receiver“) übergeben werden.
+
+Dies ist analog zu `this` in `C++` oder `JavaScript` und zu `self`
+in `Python`.
+
+Sowohl die Übergabe als Wert als auch als Zeiger ist erlaubt.
+
+---- methoden/methoden.go --------------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type Vertex struct {
+	X, Y float64
+}
+
+func (v Vertex) Abs() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+func (v *Vertex) Scale(f float64) {
+	v.X *= f
+	v.Y *= f
+}
+
+func main() {
+	v := Vertex{3, 4}
+	w := Vertex{20, 21}
+	fmt.Println(v.Abs())
+	fmt.Println(w.Abs())
+
+	v.Scale(10)
+	fmt.Println(v.Abs())
+
+    p := &w
+	fmt.Println(p.Abs())
+	p.Scale(10)
+	fmt.Println(p.Abs())
+}
+----------------------------------------------------------------^
+
+Ein Typ muß nicht unbedingt eine Struktur sein, um Empfänger zu
+werden. Es muß nur ein selbstdefinierter Typ sein.
+
+---- methoden/nichtstruktur.go ---------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type MyFloat float64
+
+func (f MyFloat) Abs() float64 {
+	if f < 0 {
+		return float64(-f)
+	}
+	return float64(f)
+}
+
+func main() {
+	f := MyFloat(-math.Sqrt2)
+	fmt.Println(f.Abs())
+}
+----------------------------------------------------------------^
+
+Methoden dürfen per Zuweisung in normale Funktionen umgewandelt
+werden.
+
+---- methoden/function-method.go -------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type Vertex struct {
+	X, Y float64
+}
+
+func (v Vertex) Abs() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+func main() {
+	v := Vertex{3, 4}
+
+	var abs func(Vertex) float64 = Vertex.Abs
+	fmt.Println(abs(v))
+
+    var a func() float64 = v.Abs
+    fmt.Println(a())
+}
+----------------------------------------------------------------^
+
+
+Für den Zeiger-Empfänger gilt wie für die bisherigen
+Zeigerparameter:
+
+  - Weil es Zeiger sind, können die Inhalte damit geändert werden.
+  - Nur der Zeiger wird kopiert.
+
+Generell wird empfohlen, daß eine Klasse entweder nur Zeiger-
+oder nur Wert-Empfänger hat.
+
+---- methoden/empfaenger-einheitlich.go ------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type Vertex struct {
+	X, Y float64
+}
+
+func (v *Vertex) Abs() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+func (v *Vertex) Scale(f float64) {
+	v.X = v.X * f
+	v.Y = v.Y * f
+}
+
+func main() {
+	v := &Vertex{3, 4}
+	fmt.Printf("Before scaling: %+v, Abs: %v\n", v, v.Abs())
+	v.Scale(5)
+	fmt.Printf("After scaling: %+v, Abs: %v\n", v, v.Abs())
+}
+----------------------------------------------------------------^
+
+Im Gegensatz zu vor allem `C++` darf der Empfänger auch der
+Nullzeiger sein.
+
+---- methoden/this-nil.go --------------------------------------v
+package main
+
+import "fmt"
+
+type dummy struct{}
+
+func (this *dummy) doit() {
+	if this == nil {
+		println("ja")
+	} else {
+		println("nein")
+	}
+}
+
+func main() {
+	var d *dummy
+	fmt.Printf("%v (%T)\n", d, d)
+	d.doit()
+}
+----------------------------------------------------------------^
+
+Beispiel: Berechnung von pi.
+
+---- methoden/pi-ueber-flaeche.go ------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+	"math/rand"
+)
+
+type Vertex struct {
+	X, Y float64
+}
+
+func (v *Vertex) Abs() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+const (
+	Num = 0x1000000
+)
+
+func main() {
+	inside := 0
+	for i := 0; i < Num; i++ {
+		v := Vertex{rand.Float64(), rand.Float64()}
+		if v.Abs() < 1.0 {
+			inside++
+		}
+	}
+	var res float64 = 4.0
+	res *= float64(inside)
+	res /= Num
+	fmt.Println(res)
+}
+----------------------------------------------------------------^
+
+
+
+=== Vererbung
+
+---- methoden/vererbung.go -------------------------------------v
+package main
+
+import "fmt"
+
+type Car struct{}
+
+type Limousine struct {
+	Car
+}
+
+func (_ Car) consumption() float64 {
+	return 0.07
+}
+
+func (_ Limousine) consumption() float64 {
+	return 0.15
+}
+
+func main() {
+	var c Car = Car{}
+	var l Limousine = Limousine{}
+
+	fmt.Println("Verbrauch Auto:      ", c.consumption())
+	fmt.Println("Verbrauch Limousine: ", l.consumption())
+	fmt.Println("Falsch:              ", l.Car.consumption())
+}
+----------------------------------------------------------------^
+
+
+
+=== Mehrfachvererbung
+
+Eine Struktur kann über die unbenannten Elemente von mehreren
+Strukturen erben.
+
+---- methoden/mehrfachvererbung.go -----------------------------v
+package main
+
+import "fmt"
+
+type Camera struct{}
+
+func (_ Camera) takePicture() string {
+	return "Click"
+}
+
+type Phone struct{}
+
+func (_ Phone) dialNumber() string {
+	return "Ring Ring"
+}
+
+// Mehrfachvererbung
+type CameraPhone struct {
+	Camera
+	Phone
+}
+
+func main() {
+	cp := new(CameraPhone)
+	fmt.Println("Our new CameraPhone exhibits multiple behaviors ...")
+	fmt.Println("It can take a picture:  ", cp.takePicture())
+	fmt.Println("It can also make calls: ", cp.dialNumber())
+}
+----------------------------------------------------------------^
+
+
+
+=== Interfaces
+
+Wenn ein Objekt vom Typ interface ist, bedeutet dies, daß es
+bestimmte Methoden besitzt.
+
+---- methoden/interface.go -------------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type Vertex struct {
+	X, Y float64
+}
+
+func (v *Vertex) Abs() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+type Abser interface {
+	Abs() float64
+}
+
+func main() {
+	v := Vertex{3, 4}
+
+	var a Abser
+	a = &v
+	fmt.Println(a.Abs())
+
+	// Nur der Zeiger ist ein Abser
+	// a = v
+	// fmt.Println(a.Abs())
+}
+----------------------------------------------------------------^
+
+---- methoden/interface-two.go ---------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type MyFloat float64
+
+func (f MyFloat) Abs() float64 {
+	if f < 0 {
+		return float64(-f)
+	}
+	return float64(f)
+}
+
+type Vertex struct {
+	X, Y float64
+}
+
+func (v *Vertex) Abs() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+type Abser interface {
+	Abs() float64
+}
+
+func main() {
+	f := MyFloat(-math.Sqrt2)
+	v := Vertex{3, 4}
+
+	var a Abser
+	a = f // MyFloat implementiert Abser
+	fmt.Println(a.Abs())
+	a = &v // *Vertex implementiert Abser
+	fmt.Println(a.Abs())
+}
+----------------------------------------------------------------^
+
+Prüfung, ob eine Instanz zu einem Interface gehört, findet erst
+bei der Zuweisung statt.
+
+---- methoden/interface-are-satisfied-implicitly.go ------------v
+package main
+
+import "fmt"
+
+type T struct {
+	S string
+}
+
+func (t T) M() {
+	fmt.Println(t.S)
+}
+
+type I interface {
+	M()
+}
+
+func main() {
+	var i I = T{"hello"}
+	i.M()
+}
+----------------------------------------------------------------^
+
+
+---- methoden/interface-values.go ------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type T struct {
+	S string
+}
+
+func (t *T) M() {
+	fmt.Println(t.S)
+}
+
+type F float64
+
+func (f F) M() {
+	fmt.Println(f)
+}
+
+type I interface {
+	M()
+}
+
+func describe(i I) {
+	fmt.Printf("(%v, %T)\n", i, i)
+}
+
+func main() {
+	var i I
+
+	i = &T{"Hello"}
+	describe(i)
+	i.M()
+
+	i = F(math.Pi)
+	describe(i)
+	i.M()
+}
+----------------------------------------------------------------^
+
+
+Der Nullzeiger kann als Empfänger-Argument vorkommen.
+Beim Zugriff auf ein Datenmitglied ist dies tödlich.
+
+---- methoden/interface-values-with-nil.go ---------------------v
+package main
+
+import "fmt"
+
+type T struct {
+	S string
+}
+
+func (t *T) M() {
+	if t == nil {
+		fmt.Println("<nichts>")
+		return // Ausgabe von t.S wäre tödlich
+	}
+	fmt.Println(t.S)
+}
+
+type I interface {
+	M()
+}
+
+func main() {
+	var i I
+
+	var t *T
+	i = t
+	describe(i)
+	i.M()
+
+	i = &T{"hello"}
+	describe(i)
+	i.M()
+}
+
+func describe(i I) {
+	fmt.Printf("(%v, %T)\n", i, i)
+}
+----------------------------------------------------------------^
+
+Ganz ohne Zuweisung, also auch ohne Typ, scheitert der Methodenaufruf
+vollends.
+
+---- methoden/nil-interface-values.go --------------------------v
+package main
+
+import "fmt"
+
+type I interface {
+	M()
+}
+
+func main() {
+	var i I
+	describe(i)
+	fmt.Println( "Bis hier ging es noch gut.")
+	i.M()
+}
+
+func describe(i I) {
+	fmt.Printf("(%v, %T)\n", i, i)
+}
+----------------------------------------------------------------^
+
+Das leere Interface kann alles annehmen.
+
+---- methoden/empty-interface.go -------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var i interface{}
+	describe(i)
+
+	i = 42
+	describe(i)
+
+	i = "hello"
+	describe(i)
+}
+
+func describe(i interface{}) {
+	fmt.Printf("(%v, %T)\n", i, i)
+}
+----------------------------------------------------------------^
+
+Feststellung eines Typs zur Laufzeit:
+
+---- methoden/type-assertions.go -------------------------------v
+package main
+
+import "fmt"
+
+func main() {
+	var i interface{} = "hello"
+
+	s := i.(string)
+	fmt.Println(s)
+
+	s, ok := i.(string)
+	fmt.Println(s, ok)
+
+	f, ok := i.(float64)
+	fmt.Println(f, ok)
+
+	f = i.(float64) // panic
+	fmt.Println(f)
+}
+----------------------------------------------------------------^
+
+Spezieller `switch`: mit Typen.
+
+---- methoden/type-switches.go ---------------------------------v
+package main
+
+import "fmt"
+
+func do(i interface{}) {
+	switch v := i.(type) {
+	case int:
+		fmt.Printf("Twice %v is %v\n", v, v*2)
+	case string:
+		fmt.Printf("%q is %v bytes long\n", v, len(v))
+	default:
+		fmt.Printf("I don't know about type %T!\n", v)
+	}
+}
+
+func main() {
+	do(21)
+	do("hello")
+	do(true)
+}
+----------------------------------------------------------------^
+
+Allgegenwärtig ist das Interface `fmt.Stringer`.
+
+---- methoden/stringer.go --------------------------------------v
+package main
+
+import "fmt"
+
+type Person struct {
+	Name string
+	Age  int
+}
+
+func (p Person) String() string {
+	return fmt.Sprintf("%v (%v years)", p.Name, p.Age)
+}
+
+func main() {
+	a := Person{"Arthur Dent", 42}
+	z := Person{"Zaphod Beeblebrox", 9001}
+	fmt.Println(a, z)
+
+	var i fmt.Stringer = a
+	fmt.Println(i)
+}
+----------------------------------------------------------------^
+
+Beispiel:
+
+---- methoden/stringers.go -------------------------------------v
+package main
+
+import "fmt"
+
+type IPAddr [4]byte
+
+func (ip IPAddr) String() string {
+	return fmt.Sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3])
+}
+
+func main() {
+	hosts := map[string]IPAddr{
+		"loopback":  {127, 0, 0, 1},
+		"googleDNS": {8, 8, 8, 8},
+	}
+	for name, ip := range hosts {
+		fmt.Printf("%v: %v\n", name, ip)
+	}
+}
+----------------------------------------------------------------^
+
+TODO: Beispiel Objektorientierung ohne `switch`.
+
+
+
+
+=== Fehlermeldungen
+
+Fehlermeldungen laufen über ein eigenes, eingebautes Interface.
+
+----------------------------------------------------------------v
+type error interface {
+    Error() string
+}
+----------------------------------------------------------------^
+
+
+---- methoden/errors.go ----------------------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+type MyError struct {
+	When time.Time
+	What string
+}
+
+func (e *MyError) Error() string {
+	return fmt.Sprintf("at %v, %s",
+		e.When, e.What)
+}
+
+func run() error {
+	return &MyError{
+		time.Now(),
+		"it didn't work",
+	}
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Println(err)
+	}
+}
+----------------------------------------------------------------^
+
+
+---- methoden/error-math.go ------------------------------------v
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type ErrNegativeSqrt float64
+
+func (e ErrNegativeSqrt) Error() string {
+	return fmt.Sprintf("Sqrt: negative number %g", e)
+}
+
+const delta = 1e-10
+
+func Sqrt(f float64) (float64, error) {
+	if f < 0 {
+		return 0, ErrNegativeSqrt(f)
+	}
+	z := f
+	for {
+		n := z - (z*z-f)/(2*z)
+		if math.Abs(n-z) < delta {
+			break
+		}
+		z = n
+	}
+	return z, nil
+}
+
+func main() {
+	fmt.Println(Sqrt(2))
+	fmt.Println(Sqrt(-2))
+}
+----------------------------------------------------------------^
+
+
+
+---- methoden/reader.go ----------------------------------------v
+package main
+
+import (
+	"fmt"
+	"io"
+	"strings"
+)
+
+func main() {
+	r := strings.NewReader("Hello, Reader!")
+
+	b := make([]byte, 8)
+	for {
+		n, err := r.Read(b)
+		fmt.Printf("n = %v err = %v b = %v\n", n, err, b)
+		fmt.Printf("b[:n] = %q\n", b[:n])
+		if err == io.EOF {
+			break
+		}
+	}
+}
+----------------------------------------------------------------^
+
+
+---- readers.go ------------------------------------------------v
+package main
+
+import "golang.org/x/tour/reader"
+
+type MyReader struct{}
+
+func (r MyReader) Read(b []byte) (int, error) {
+	for i := range b {
+		b[i] = 'A'
+	}
+	return len(b), nil
+}
+
+func main() {
+	reader.Validate(MyReader{})
+}
+----------------------------------------------------------------^
+
+
+
+
+---- methoden/rot13.go -----------------------------------------v
+package main
+
+import (
+	"io"
+	"os"
+	"strings"
+)
+
+func rot13(b byte) byte {
+	var a, z byte
+	switch {
+	case 'a' <= b && b <= 'z':
+		a, z = 'a', 'z'
+	case 'A' <= b && b <= 'Z':
+		a, z = 'A', 'Z'
+	default:
+		return b
+	}
+	return (b-a+13)%(z-a+1) + a
+}
+
+type rot13Reader struct {
+	r io.Reader
+}
+
+func (r rot13Reader) Read(p []byte) (n int, err error) {
+	n, err = r.r.Read(p)
+	for i := 0; i < n; i++ {
+		p[i] = rot13(p[i])
+	}
+	return
+}
+
+func main() {
+	s := strings.NewReader(
+		"Lbh penpxrq gur pbqr!")
+	r := rot13Reader{s}
+	io.Copy(os.Stdout, &r)
+}
+----------------------------------------------------------------^
+
+
+---- methoden/http.go ------------------------------------------v
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+type String string
+
+func (s String) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s\n", s)
+}
+
+type Struct struct {
+	Greeting string
+	Punct    string
+	Who      string
+}
+
+func (s *Struct) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s%s %s\n", s.Greeting, s.Punct, s.Who)
+}
+
+func main() {
+	http.Handle("/string", String("I'm a frayed knot."))
+	http.Handle("/struct", &Struct{"Hello", ":", "Gophers!"})
+	err := http.ListenAndServe("localhost:4000", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+----------------------------------------------------------------^
+
+
+
+
+== Nebenläufigkeit
+
+
+---- nebenlaeufigkeit/goroutines.go ----------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func say(s string) {
+	for i := 0; i < 5; i++ {
+		time.Sleep(100 * time.Millisecond)
+		fmt.Println(i,s)
+	}
+}
+
+func main() {
+	go say("world")
+	say("hello")
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/goroutines-unbenannt.go ------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func say(s string, delay int) {
+	for i := 0; i < 10; i++ {
+		time.Sleep(time.Duration(delay) * time.Millisecond)
+		fmt.Println(s)
+	}
+}
+
+func main() {
+	go func() {
+		say("world", 200)
+	}()
+	say("hello,", 100)
+	time.Sleep(5 * time.Second)
+}
+----------------------------------------------------------------^
+
+Die Anzahl der erlaubten Goroutinen ist unbegrenzt. Die
+Reihenfolge der Ausführung ist chaotisch.
+
+---- nebenlaeufigkeit/goroutines-viele.go ----------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	for i := 0; i < 1000; i++ {
+		n := i
+		go func() {
+			time.Sleep(2 * time.Millisecond)
+			fmt.Println("Hallo Nr.", n)
+		}()
+	}
+	time.Sleep(5 * time.Second)
+}
+----------------------------------------------------------------^
+
+
+
+=== Kanäle
+
+---- nebenlaeufigkeit/channels.go ------------------------------v
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	c := make(chan string, 3)
+	c <- "foo"
+	c <- "bar"
+	c <- "baz"
+	fmt.Println(<-c)
+	fmt.Println(<-c)
+	fmt.Println(<-c)
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/channels-plain.go ------------------------v
+package main
+
+import (
+	"fmt"
+)
+
+func provide(c chan string) {
+	c <- "foo"
+	c <- "bar"
+	c <- "baz"
+}
+
+func main() {
+	c := make(chan string)
+	go provide(c)
+
+	fmt.Println(<-c)
+	fmt.Println(<-c)
+	fmt.Println(<-c)
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/channels-wait.go -------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func provide(c chan string) {
+	fmt.Println("sending foo.")
+	c <- "foo"
+	fmt.Println("sending bar.")
+	c <- "bar"
+	fmt.Println("sending baz.")
+	c <- "baz"
+}
+
+func main() {
+	c := make(chan string)
+	go provide(c)
+
+	time.Sleep(1 * time.Second)
+	fmt.Println(<-c)
+	time.Sleep(1 * time.Second)
+	fmt.Println(<-c)
+	time.Sleep(1 * time.Second)
+	fmt.Println(<-c)
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/channels-loop.go -------------------------v
+package main
+
+import (
+	"fmt"
+)
+
+func provide(c chan int) {
+	n := 1
+	for i := 0; i < 10; i++ {
+		n *= 2
+		c <- n - 1
+	}
+}
+
+func main() {
+	c := make(chan int)
+	go provide(c)
+
+	for i := 0; i < 9; i++ { // bis 11 bräche ab
+		fmt.Println(<-c)
+	}
+}
+----------------------------------------------------------------^
+
+Beispiel: Collatz-Folge.
+
+---- nebenlaeufigkeit/channels-collatz.go ----------------------v
+package main
+
+import (
+	"fmt"
+)
+
+func collatz(n int, c chan int) {
+	for {
+		c <- n
+		if n == 1 {
+			break
+		}
+		if n%2 == 0 {
+			n = n / 2
+		} else {
+			n = 3*n + 1
+		}
+	}
+}
+
+func main() {
+	c := make(chan int)
+	go collatz(17, c)
+
+	for i := 0; i < 9; i++ {
+		fmt.Println(<-c)
+	}
+}
+----------------------------------------------------------------^
+
+Nicht empfohlen: Channel in beide Richtungen verwenden.
+
+---- nebenlaeufigkeit/channels-bidir.go ------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func secondary(c chan string) {
+	fmt.Println(<-c)
+	c <- "from secondary"
+}
+
+func main() {
+	c := make(chan string)
+	go secondary(c)
+	c <- "from main"
+	time.Sleep(3 * time.Second)
+	fmt.Println(<-c)
+}
+----------------------------------------------------------------^
+
+Man darf auch zwei Goroutinen auf einen Kanal schicken lassen.
+
+---- nebenlaeufigkeit/channels-two.go --------------------------v
+package main
+
+import "fmt"
+
+func sum(s []int, c chan int) {
+	sum := 0
+	for _, v := range s {
+		sum += v
+	}
+	c <- sum // send sum to c
+}
+
+func main() {
+	s := []int{7, 2, 8, -9, 4, 0}
+
+	c := make(chan int)
+	go sum(s[:len(s)/2], c)
+	go sum(s[len(s)/2:], c)
+	x, y := <-c, <-c // receive from c
+
+	fmt.Println(x, y, x+y)
+}
+----------------------------------------------------------------^
+
+Schicken zwei Goroutinen Werte auf einen Kanal, kann der Lesende
+nicht mehr unterscheiden, von welcher Goroutine die Daten erzeugt
+wurden.
+
+---- nebenlaeufigkeit/channels-reihenfolge.go ------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func provide(n int, p int, c chan int) {
+	for i := 0; i < 10; i++ {
+		c <- n
+		n++
+		time.Sleep(time.Duration(p) * time.Millisecond)
+	}
+	fmt.Println("Done")
+}
+
+func main() {
+	c := make(chan int)
+	go provide(0, 2, c)
+	go provide(100, 3, c)
+
+	for i := 0; i < 11; i++ {
+		x := <-c
+		y := <-c
+		fmt.Println(x, y)
+	}
+	time.Sleep(2 * time.Second)
+}
+----------------------------------------------------------------^
+
+Normalerweise wartet die schreibende Goroutine, bis die Lesende
+eine Information empfangen kann. Man darf einem Kanal aber auch
+eine Puffergröße zuweisen.
+
+---- nebenlaeufigkeit/channels-puffer.go -----------------------v
+package main
+
+import "fmt"
+
+func main() {
+	ch := make(chan int, 2)
+	ch <- 1
+	ch <- 2
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/channels-puffer-goroutine.go -------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func provide(c chan int) {
+	n := 1
+	for i := 0; i < 10; i++ {
+		n *= 2
+		res := n - 1
+		c <- n - 1
+		fmt.Println("gesendet:", res)
+	}
+}
+
+func main() {
+	c := make(chan int, 6)
+	go provide(c)
+
+	for i := 0; i < 10; i++ {
+		fmt.Println(<-c)
+		time.Sleep(1 * time.Second)
+	}
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/channels-panik.go ------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func collatz(n int, c chan int) {
+	c <- n
+	for n != 1 {
+		if n%2 == 0 {
+			n = n / 2
+		} else {
+			n = 3*n + 1
+		}
+		c <- n
+	}
+	time.Sleep(1 * time.Second)
+	panic("stop innen")
+}
+
+func main() {
+	c := make(chan int)
+	go collatz(5, c)
+
+	for i := 0; i < 6; i++ {
+		fmt.Println(<-c)
+	}
+	time.Sleep(3 * time.Second)
+	panic("stop außen")
+}
+----------------------------------------------------------------^
+
+Ein Kanal darf geschlossen werden.
+
+---- nebenlaeufigkeit/channels-close.go ------------------------v
+package main
+
+import "fmt"
+
+func collatz(n int, c chan int) {
+	for {
+		c <- n
+		if n == 1 {
+			break
+		}
+		if n%2 == 0 {
+			n = n / 2
+		} else {
+			n = 3*n + 1
+		}
+	}
+	close(c)
+}
+
+func main() {
+	c := make(chan int)
+	go collatz(11, c)
+
+	for {
+		v, ok := <-c
+		if !ok {
+			break
+		}
+		fmt.Println(v)
+	}
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/channels-close-range.go ------------------v
+package main
+
+import "fmt"
+
+func collatz(n int, c chan int) {
+	for {
+		c <- n
+		if n == 1 {
+			break
+		}
+		if n%2 == 0 {
+			n = n / 2
+		} else {
+			n = 3*n + 1
+		}
+	}
+	close(c)
+}
+
+func main() {
+	c := make(chan int)
+	go collatz(11, c)
+
+	for v := range c {
+		fmt.Println(v)
+	}
+}
+----------------------------------------------------------------^
+
+Beispiel: Nocheinmal Fibonacci.
+
+---- nebenlaeufigkeit/channels-fibonacci.go --------------------v
+package main
+
+import "fmt"
+
+func fibonacci(n int, c chan int) {
+	a, b := 0, 1
+	c <- a
+	c <- b
+	for i := 0; i < n; i++ {
+		a, b = b, a+b
+		c <- b
+	}
+	close(c)
+}
+
+func main() {
+	c := make(chan int, 20)
+	go fibonacci(cap(c), c) // Auch ein Kanal hat eine Kapazität
+	for i := range c {
+		fmt.Println(i)
+	}
+}
+----------------------------------------------------------------^
+
+
+
+=== Warten auf mehreren Kanälen
+
+Eine Select-Anweisung wartet auf ein Ereignis auf einem oder
+mehreren Kanälen.
+
+---- nebenlaeufigkeit/select.go --------------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func sleep_and_signal(n int, c chan bool) {
+	time.Sleep(time.Duration(n) * time.Second)
+	c <- true
+}
+
+func main() {
+	fmt.Println("Start")
+
+	c := make(chan bool)
+	go sleep_and_signal(3, c)
+
+	select {
+	case <-c:
+		fmt.Println("Meldung!")
+	}
+
+	fmt.Println("Fertig")
+}
+----------------------------------------------------------------^
+
+Mit `default` muß nicht unbedingt ein Ereignis eintreten.
+
+---- nebenlaeufigkeit/select-default.go ------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func sleep_and_signal(n int, c chan bool) {
+	time.Sleep(time.Duration(n) * time.Second)
+	c <- true
+}
+
+func main() {
+	fmt.Println("Start")
+
+	c := make(chan bool)
+	go sleep_and_signal(3, c)
+
+	select {
+	case <-c:
+		fmt.Println("Meldung!") // Wird hier übergangen.
+	default:
+		fmt.Println("Nichts ist passiert.")
+	}
+
+	fmt.Println("Fertig")
+}
+----------------------------------------------------------------^
+
+In einer Schleife:
+
+---- nebenlaeufigkeit/select-for.go ----------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func after(n int) chan bool {
+	c := make(chan bool)
+	go func(c chan bool) {
+		time.Sleep(time.Duration(n) * time.Second)
+		c <- true
+	}(c)
+	return c
+}
+
+func timer(n int) chan bool {
+	c := make(chan bool)
+	go func(c chan bool) {
+		for {
+			time.Sleep(time.Duration(n) * time.Second)
+			c <- true
+		}
+	}(c)
+	return c
+}
+
+func main() {
+	t := timer(1)
+	b := after(5)
+	for {
+		select {
+		case <-t:
+			fmt.Print("tick")
+		case v, ok := <-b:
+			fmt.Print("BOOM!")
+			fmt.Println()
+			return
+		default:
+			fmt.Print(".")
+			time.Sleep(time.Duration(50) * time.Millisecond)
+		}
+	}
+}
+----------------------------------------------------------------^
+
+Anstatt des `return` läßt sich auch die Schleife beenden.
+
+---- nebenlaeufigkeit/select-default-assign.go -----------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func after(n int) chan bool {
+	c := make(chan bool)
+	go func(c chan bool) {
+		time.Sleep(time.Duration(n) * time.Second)
+		c <- true
+	}(c)
+	return c
+}
+
+func timer(n int) chan bool {
+	c := make(chan bool)
+	go func(c chan bool) {
+		for {
+			time.Sleep(time.Duration(n) * time.Second)
+			c <- true
+		}
+	}(c)
+	return c
+}
+
+func main() {
+	t := timer(1)
+	b := after(5)
+	for stop := false; !stop; {
+		select {
+		case <-t:
+			fmt.Print("tick")
+		case _, stop = <-b:
+			fmt.Print("BOOM!")
+		default:
+			fmt.Print(".")
+			time.Sleep(time.Duration(50) * time.Millisecond)
+		}
+	}
+	fmt.Println()
+}
+----------------------------------------------------------------^
+
+So läßt sich auch prüfen, ob der Kanal geschlossen wurde.
+
+---- nebenlaeufigkeit/select-default-close.go ------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func after(n int) chan bool {
+	b := make(chan bool)
+	go func(b chan bool) {
+		time.Sleep(time.Duration(n) * time.Second)
+		close( b)
+	}(b)
+	return b
+}
+
+func timer(n int) chan bool {
+	c := make(chan bool)
+	go func(c chan bool) {
+		for {
+			time.Sleep(time.Duration(n) * time.Second)
+			c <- true
+		}
+	}(c)
+	return c
+}
+
+func main() {
+	t := timer(1)
+	b := after(5)
+	for running := true; running; {
+		select {
+		case <-t:
+			fmt.Print("tick")
+		case _, running = <-b:
+			fmt.Print("BOOM!")
+		default:
+			fmt.Print(".")
+			time.Sleep(time.Duration(50) * time.Millisecond)
+		}
+	}
+	fmt.Println()
+}
+----------------------------------------------------------------^
+
+Obige Beispiele haben einen Schönheitsfehler: Die Goroutinen
+bestehen weiter und werden erst mit Programmende aufgelöst. Sie
+sollten gestoppt werden, wenn sie nicht mehr gebraucht werden.
+
+Goroutinen können sich nicht gegenseitig abschießen.
+Man benutzt einen Quit-Kanal.
+
+---- nebenlaeufigkeit/select-quit.go ---------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func fibonacci(c chan int, quit chan bool) {
+	a, b := 0, 1
+	for {
+		select {
+		case c <- a:
+			a, b = b, a+b
+		case <-quit:
+			return
+		}
+	}
+}
+
+func main() {
+	c := make(chan int)
+	quit := make(chan bool)
+	go fibonacci(c, quit)
+	for i := 0; i < 20; i++ {
+		fmt.Printf("%v ", <-c)
+	}
+	quit <- true
+	fmt.Printf("...\n")
+	time.Sleep(3 * time.Second) // lasse die Goroutine sich beenden
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/select-quit-close.go ---------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func fibonacci(c chan int, quit chan bool) {
+	a, b := 0, 1
+	for {
+		select {
+		case c <- a:
+			a, b = b, a+b
+		case _, ok := <-quit:
+			if !ok {
+				return
+			}
+		}
+	}
+}
+
+func main() {
+	c := make(chan int)
+	quit := make(chan bool)
+	go fibonacci(c, quit)
+
+	for i := 0; i < 20; i++ {
+		fmt.Printf("%v ", <-c)
+	}
+	close(quit)
+
+	fmt.Printf("...\n")
+	time.Sleep(3 * time.Second) // lasse die Goroutine sich beenden
+}
+----------------------------------------------------------------^
+
+---- nebenlaeufigkeit/select-quit-close-kurz.go ----------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func fibonacci(c chan int, quit chan bool) {
+	a, b := 0, 1
+	for {
+		select {
+		case c <- a:
+			a, b = b, a+b
+		case <-quit: // egal, was kommt
+			return
+		}
+	}
+}
+
+func main() {
+	c := make(chan int)
+	quit := make(chan bool)
+	go fibonacci(c, quit)
+
+	for i := 0; i < 20; i++ {
+		fmt.Printf("%v ", <-c)
+	}
+	close(quit)
+
+	fmt.Printf("...\n")
+	time.Sleep(3 * time.Second)
+}
+----------------------------------------------------------------^
+
+Abbruch mit Kommunikation durch einen Kanal in beiden Richtungen.
+
+---- nebenlaeufigkeit/select-quit-close-bidir.go ---------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func fibonacci(c chan int) {
+	a, b := 0, 1
+	for {
+		select {
+		case c <- a:
+			a, b = b, a+b
+		case <-c:
+			return
+		}
+	}
+}
+
+func main() {
+	c := make(chan int)
+	go fibonacci(c)
+
+	for i := 0; i < 20; i++ {
+		fmt.Printf("%v ", <-c)
+	}
+	close(c)
+
+	fmt.Printf("...\n")
+	time.Sleep(3 * time.Second)
+}
+----------------------------------------------------------------^
+
+
+
+==== Beispiele
+
+
+
+===== For-Schleife wie in Python
+
+---- nebenlaeufigkeit/wie-python.go ----------------------------v
+package main
+
+import "fmt"
+
+func wie_python2() {
+	var l []int
+	for i := 0; i < 1000; i++ {
+		l = append(l, i)
+	}
+
+	for i := range l {
+		fmt.Printf("%d ", i*i)
+	}
+	fmt.Printf("\n")
+}
+
+func wie_python3() {
+	c := make(chan int)
+
+	go func(max int, d chan int) {
+		for i := 0; i < max; i++ {
+			d <- i
+		}
+		close(d)
+	}(1000, c)
+
+	for i := range c {
+		fmt.Printf("%d ", i*i)
+	}
+	fmt.Printf("\n")
+}
+
+func main() {
+	wie_python3()
+}
+----------------------------------------------------------------^
+
+
+
+===== Vergleichen zweier binärer Bäume.
+
+---- nebenlaeufigkeit/binarytrees.go ---------------------------v
+package main
+
+import "fmt"
+
+type Tree struct {
+	Left  *Tree
+	Value int
+	Right *Tree
+}
+
+func (t *Tree) insertAll(vals ...int) *Tree {
+	for _, val := range vals {
+		t = t.insert(val)
+	}
+	return t
+}
+
+func (t *Tree) insert(v int) *Tree {
+	if t == nil {
+		return &Tree{nil, v, nil}
+	}
+	if v <= t.Value {
+		t.Left = t.Left.insert(v)
+	} else {
+		t.Right = t.Right.insert(v)
+	}
+	return t
+}
+
+func (t *Tree) String() string {
+	s := ""
+	if t != nil {
+		if t.Left != nil {
+			s += t.Left.String() + " "
+		}
+		s += fmt.Sprint(t.Value)
+		if t.Right != nil {
+			s += " " + t.Right.String()
+		}
+	}
+	return "(" + s + ")"
+}
+
+func (t *Tree) Walk(ch chan int) {
+	var walkImpl func(*Tree, chan int)
+	walkImpl = func(t *Tree, ch chan int) {
+		if t == nil {
+			return
+		}
+		walkImpl(t.Left, ch)
+		ch <- t.Value
+		walkImpl(t.Right, ch)
+	}
+	walkImpl(t, ch)
+	close(ch)
+}
+
+// NOTE: The implementation leaks goroutines when trees are different.
+// See binarytrees_quit.go for a better solution.
+func Same(t1, t2 *Tree) bool {
+	w1, w2 := make(chan int), make(chan int)
+
+	go t1.Walk(w1)
+	go t2.Walk(w2)
+
+	for {
+		v1, ok1 := <-w1
+		v2, ok2 := <-w2
+		if !ok1 || !ok2 {
+			return !ok1 && !ok2
+		}
+		if v1 != v2 {
+			return false
+		}
+	}
+}
+
+func main() {
+	var s, t *Tree
+	s = s.insertAll(3, 1, 8, 1, 2, 5, 13)
+	t = t.insertAll(8, 3, 13, 1, 5, 1, 2)
+	fmt.Println(s)
+	fmt.Println(t)
+	if Same(s, t) {
+		fmt.Println("Inhalt ist gleich.")
+	} else {
+		fmt.Println("Inhalt ist unterschiedlich.")
+	}
+}
+----------------------------------------------------------------^
+
+
+---- nebenlaeufigkeit/binarytrees-quit.go ----------------------v
+package main
+
+import "fmt"
+
+type Tree struct {
+	Left  *Tree
+	Value int
+	Right *Tree
+}
+
+func (t *Tree) insertAll(vals ...int) *Tree {
+	for _, val := range vals {
+		t = t.insert(val)
+	}
+	return t
+}
+
+func (t *Tree) insert(v int) *Tree {
+	if t == nil {
+		return &Tree{nil, v, nil}
+	}
+	if v <= t.Value {
+		t.Left = t.Left.insert(v)
+	} else {
+		t.Right = t.Right.insert(v)
+	}
+	return t
+}
+
+func (t *Tree) String() string {
+	s := ""
+	if t != nil {
+		if t.Left != nil {
+			s += t.Left.String() + " "
+		}
+		s += fmt.Sprint(t.Value)
+		if t.Right != nil {
+			s += " " + t.Right.String()
+		}
+	}
+	return "(" + s + ")"
+}
+
+func (t *Tree) Walk(ch chan int, quit chan bool) {
+	var walkImpl func(*Tree, chan int, chan bool)
+	walkImpl = func(t *Tree, ch chan int, quit chan bool) {
+		if t == nil {
+			return
+		}
+		walkImpl(t.Left, ch, quit)
+		select {
+		case ch <- t.Value:
+			break
+		case <-quit:
+			return
+		}
+		walkImpl(t.Right, ch, quit)
+	}
+	walkImpl(t, ch, quit)
+	close(ch)
+}
+
+func Same(t1, t2 *Tree) bool {
+	w1, w2 := make(chan int), make(chan int)
+	quit := make(chan bool)
+	defer close(quit)
+
+	go t1.Walk(w1, quit)
+	go t2.Walk(w2, quit)
+
+	for {
+		v1, ok1 := <-w1
+		v2, ok2 := <-w2
+		if !ok1 || !ok2 {
+			return !ok1 && !ok2
+		}
+		if v1 != v2 {
+			return false
+		}
+	}
+}
+
+func main() {
+	var s, t *Tree
+	s = s.insertAll(3, 1, 8, 1, 2, 5, 13)
+	t = t.insertAll(8, 3, 13, 1, 5, 1, 2)
+	fmt.Println(s)
+	fmt.Println(t)
+	if Same(s, t) {
+		fmt.Println("Inhalt ist gleich.")
+	} else {
+		fmt.Println("Inhalt ist unterschiedlich.")
+	}
+}
+----------------------------------------------------------------^
+
+
+
+===== Drehendes Rad auf der Konsole
+
+---- nebenlaeufigkeit/drawwheel.go -----------------------------v
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func DrawWheel(s string) (chan bool) {
+	quit := make(chan bool)
+	go func() {
+		for {
+			for _, u := range []rune(s) {
+				fmt.Print(string(u))
+				select {
+				case <-quit:
+					fmt.Print("\b \b\n")
+					return
+				default:
+					time.Sleep(150 * time.Millisecond)
+				}
+				fmt.Print("\b")
+			}
+		}
+	}()
+	return quit
+}
+
+func main() {
+	var q chan bool
+
+	q = DrawWheel(`|/-\`)
+	time.Sleep(5 * time.Second)
+	close(q)
+	time.Sleep(200 * time.Millisecond)
+
+	q = DrawWheel(".oO°*")
+	time.Sleep(5 * time.Second)
+	close(q)
+	time.Sleep(200 * time.Millisecond)
+}
+----------------------------------------------------------------^
+
+
+
+=== Mutexe
+
+Statt einer Kommunikation über Kanäle können Goroutinen auch
+Variablen gemeinsam nutzen. Dann sollten sie allerdings gesperrt
+werden.
+
+---- nebenlaeufigkeit/mutex-zaehler.go -------------------------v
+package main
+
+import (
+	"sync"
+	"fmt"
+	"time"
+)
+
+type SafeCounter struct {
+	v   int
+	mux sync.Mutex
+}
+
+func (c *SafeCounter) Inc() {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.v++
+}
+
+func (c *SafeCounter) Value() int {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	return c.v
+}
+
+func main() {
+	for {
+		c := SafeCounter{}
+		for i := 0; i < 100000; i++ {
+			go c.Inc()
+		}
+		time.Sleep(time.Second)
+		fmt.Println(c.Value())
+	}
+}
+----------------------------------------------------------------^
+
+
+
+== Pakete
+
+Das Hauptprogramm ist das Paket `main`.
+
+---- pakete/haupt.go -------------------------------------------v
+package main // Anderer Paketname wird nicht ausgeführt.
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println("Hello, world!")
+}
+----------------------------------------------------------------^
+
+Andere Pakete dürfen importiert werden.
+
+---- pakete/importiere.go --------------------------------------v
+package main
+
+import (
+	"fmt"
+	"math/rand"
+)
+
+func main() {
+    for i := 0; i < 10 ; i++ {
+        fmt.Println( "My favorite number is", rand.Intn( 10))
+    }
+}
+----------------------------------------------------------------^
+
+Pakete werden gesucht im Verzeichnis "src" unter Verzeichnissen,
+die im Go-Pfad vorkommen. Der Go-Pfad steht in der
+Umgebungsvariable:
+
+  go env GOPATH
+
+(Nicht verwechseln mit `GOROOT`.)
+
+Also entweder eines hiervon:
+
+    $ export GOPATH=/..../pakete
+	$ go env -w GOPATH /..../pakete
+
+oder:
+
+    $ mkdir ~/go
+	$ mv src ~/go
+
+In dem Verzeichnis, das gefunden wurde nach dem Namen wie
+angegeben in der Anweisung `import`, werden alle Dateien geladen.
+Daß eine genauso heißt, wie das Verzeichnis, ist ratsam, aber
+nicht zwingend.
+
+---- pakete/src/mypkg/mypkg.go ---------------------------------v
+package mypkg
+
+type Dummy struct {
+	PubVal  string
+	privVal string
+}
+
+func PubFunc() {
+}
+
+func privFunc() {
+}
+----------------------------------------------------------------^
+
+Der Paketname aus der Anweisung `package` wird auch der Paketname
+in dem Modul, das es importiert. Eine sich vom Verzeichnisnamen
+unterscheidende Bezeichnung ist nicht ratsam.
+
+Sowohl Funktion und Typen, als auch Strukturelemente werden nur
+exportiert, wenn sie mit einem Großbuchstaben anfangen.
+
+---- pakete/lade-es.go -----------------------------------------v
+package main
+
+import (
+	"fmt"
+	"mypkg"
+)
+
+func main() {
+	var d mypkg.Dummy
+	d.PubVal = "hello"
+	fmt.Println( d.PubVal)
+	mypkg.PubFunc()
+}
+----------------------------------------------------------------^
+
+---- pakete/src/mypkg/other.go ---------------------------------v
+package mypkg
+
+type Other struct {
+	Title string
+	Num   int
+}
+----------------------------------------------------------------^
+
+---- pakete/lade-beide.go --------------------------------------v
+package main
+
+import (
+	"mypkg"
+)
+
+func main() {
+	var d mypkg.Dummy
+	var o mypkg.Other
+	d.PubVal = "hello"
+	o.Title = "foo"
+}
+----------------------------------------------------------------^
+
+Zyklische Abhängigkeiten sind nicht erlaubt.
+
+Man darf Pakete umbenennen.
+
+---- pakete/lade-umbenannt.go ----------------------------------v
+package main
+
+import (
+	f "fmt"
+)
+
+func main() {
+	f.Println("Hi!")
+}
+----------------------------------------------------------------^
+
+Man kann den Namen des Pakets ausblenden, indem man den Punkt als
+Paketnamen angibt.
+
+---- pakete/lade-ausblend.go -----------------------------------v
+package main
+
+import (
+	. "fmt"
+)
+
+func main() {
+	Println("Hi!") // kein fmt vorne dran.
+}
+----------------------------------------------------------------^
+
+
+
+=== Initialisierung von Paketen
+
+Eine Funktion `init` wird immer zuerst ausgeführt.
+
+Alternativ kann auch eine unbenannte globale Variable mit einem
+Rückgabewert gesetzt werden.
+
+---- pakete/initfunktion.go ------------------------------------v
+package main
+
+import "fmt"
+
+var _ uint = f()
+
+func init() {
+	fmt.Println("Init.")
+}
+
+func f() uint {
+	fmt.Println("F.")
+	return 0
+}
+
+func main() {
+	fmt.Println("Hello, World!")
+}
+----------------------------------------------------------------^
+
+Ein Paket mit Init-Funktion:
+
+---- pakete/src/myinit/myinit.go -------------------------------v
+package myinit
+
+import "fmt"
+
+func init() {
+	fmt.Println("Initialisiere myinit.")
+}
+
+func Doit() {
+	fmt.Println("Hier!")
+}
+----------------------------------------------------------------^
+
+---- pakete/lade-init.go ---------------------------------------v
+package main
+
+import (
+	"myinit"
+)
+
+func main() {
+	myinit.Doit()
+}
+----------------------------------------------------------------^
+
+Soll nur die Init-Funktion aufgerufen werden, kann das Paket
+unbenannt bleiben.
+
+---- pakete/lade-init-nur.go ------------------------------------v
+package main
+
+import (
+	_ "myinit"
+)
+
+func main() {
+}
+----------------------------------------------------------------^
+
+
+
+== Systemparameter
+
+
+
+=== Aufrufargumente
+
+---- system/args.go --------------------------------------------v
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+
+	argsWithProg := os.Args
+	argsWithoutProg := os.Args[1:]
+
+	arg := os.Args[3]
+
+	fmt.Println(argsWithProg)
+	fmt.Println(argsWithoutProg)
+	fmt.Println(arg)
+}
+----------------------------------------------------------------^
+
+
+
+=== Umgebungsvariablen
+
+---- system/umgebungsvariablen.go ------------------------------v
+package main
+
+import (
+	"fmt"
+	"os"
+	"strings"
+)
+
+func main() {
+
+	os.Setenv("FOO", "1")
+	fmt.Println("FOO:", os.Getenv("FOO"))
+	fmt.Println("BAR:", os.Getenv("BAR"))
+
+	fmt.Println()
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if pair[0] == "PATH" {
+			fmt.Println(e)
+			continue
+		}
+		fmt.Println(pair[0])
+	}
+}
+----------------------------------------------------------------^
+
+
+
+=== Exit-Code setzen
+
+---- system/exitcode.go ----------------------------------------v
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(3)
+	}
+}
+
+type MyError struct {
+	Msg string
+}
+
+func (e MyError) Error() string { return e.Msg }
+
+func run() error {
+	var err error
+	fmt.Println("do something...")
+	err = MyError{"failed"}
+	return err
+}
+----------------------------------------------------------------^
+
+Exit-Code nach Panik setzen:
+
+---- system/exitcodepanic.go -----------------------------------v
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+	}()
+	run()
+}
+
+func run() {
+	fmt.Println("do something...")
+	panic("failed")
+	fmt.Println("still there?")
+}
+----------------------------------------------------------------^
+
+
+
+== Ausblick
+
+
+=== Verweise
+
+https://gobyexample.com/
+
+

@@ -1,0 +1,28 @@
+- Konventionen CamelCase/snake_case usf.?
+  - Variablen, Funktionen, Typen: CamelCase
+  - Pakete: Ohne [A-Z_]
+  - Interfaces: klein mit -er
+  -keine _
+
+- gofmt für ganzes Verzeichnis?
+  gofmt -w .
+
+- global/lokal: Wie Zugriff auf lokale, wenn es beide gibt.
+  - Benenne sie anders
+
+- Beliebig große Zahlen
+
+- Endrekursion in C wegoptimiert.
+
+- string, array, map: inwieweit immutable?
+  https://gobyexample.com/string-functions
+
+- vgl. mutable bei Rust
+
+- Datum, Uhrzeit, Zeitstempel usf.
+  - time.Seconds und type und Multiplikation
+
+- Alte Version von Modulen
+
+- Kann man panic() auch eine eigene Error-Struct zurückgeben lassen?
+

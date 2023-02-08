@@ -1,0 +1,108 @@
+= Go Programmierung - Einführung
+
+
+== Kurze Seminarbeschreibung
+
+Im Kurs erfahren Sie von Grund auf, wie die Programmiersprache Go funktioniert,
+was die Stärken der Nebenläufigkeit sind, die Go auszeichnet.
+
+
+== Weitere Kursinformationen (Code: kursgl1)
+
+Angesprochener Teilnehmerkreis: Entwickler, die von verschiedenen
+Sprachsystemen her kommen, wie Python, Ruby oder auch Java und C++.
+
+Im Kurs erfahren Sie von Grund auf, wie die Programmiersprache Go funktioniert,
+was die Stärken der Nebenläufigkeit sind, die Go auszeichnet.
+
+Anhand vieler praktischer Übungen werden die Teilnehmer effektiv in Go
+eingeführt und können am Ende der Schulung erste Projekte in Angriff nehmen.
+
+Hinweis: Absolute Programmiereinsteiger sind hier nicht angesprochen. Wir
+empfehlen Interessenten, die Go programmieren lernen möchten, aber noch
+keinerlei Erfahrung aus anderen Sprachen mitbringen, zuerst den Kurs:
+Einführung in die Programmierung für Programmiereinsteiger zu absolvieren.
+
+
+== Seminar- bzw. Schulungsinhalte
+
+  - Was ist Go?
+  - Installation von Go
+  - Grundlagen - die Go Programming Language Specification
+
+  - Exceptionsystem unter Go
+  - Bedeutung nebenläufiger Programmierung auf modernen Systemen
+  - Umsetzung von nebenläufiger Programmierung in Go
+
+  - Die Standard-Bibliothek
+
+  - Strukturierung von Go Projekten
+  - Das Go long Öko-System - go vet, go lint, Race-Detektor, Go-Oracle,
+    Debugging, etc.
+
+  - Testen von Go Programmen mit unit-test
+
+
+
+== Seminar- bzw. Schulungsvoraussetzungen
+
+Sie haben bereits Programmiererfahrung in anderen Sprachsystemen, zum Beispiel
+Ruby, Python, Perl, Java, C++ oder....Programmieranfänger sollten über
+Kenntnisse entsprechend des Kurses: Einführung in die Programmierung für
+Programmiereinsteiger verfügen. Sie sollten mit einem Texteditor umgehen
+können, sowie mit dem Umgang der Kommandozeile unter GNU/Linux vertraut sein.
+
+
+
+
+= Go Programmierung - Aufbaukurs
+
+
+== Kurze Kursbeschreibung
+
+In diesem Kurs lernen Sie die aufbauenden Funktionen der Go-Programmierung
+kennen.
+
+
+== Weitere Kursinformationen (Code: kursgl2)
+
+In dieser Schulung steigen Entwickler mit Grundkenntnissen in der
+Go-Programmierung tiefer in diese starke Programmiersprache ein.
+
+Anhand von zahlreichen praxisnahen Übungen wird das Nachvollziehen der
+Inhaltspunkte leicht gemacht.
+
+
+== Kurs- bzw. Schulungsinhalte
+
+  - Auffrischung der Grundlagen
+  - Strukturen, Interfaces, Operatoren
+  - Tool-Chain
+  - Die Go-Standardtools
+  - Umsetzung gängiger Entwurfsmuster in Go (dependency injection, singleton
+    pattern, factory pattern, ...)
+  - Übersicht über wichtige Go-Bibliotheken
+  - Konfiguration, Kommandozeilenwerkzeuge
+  - Web und Web Services, QT-Anbindung
+  - Anbindung an SQL DBs und noSQL DB
+  - Verwendung von Go-fremden Bibliotheken
+  - cgo, Einbindung von C-Bibliotheken
+  - Verwendung von C++ -Bibliotheken
+  - gobind, Einbindung von Java-Bibliotheken
+  - Nebenläufigkeit, Planung nebenläufiger Anwendungen
+  - Sequenzen und Abläufe (einschließlich Visualisierung)
+  - Clean-Code-Prinzip zur Bugvermeidung
+  - Reduzierung bzw. Vermeidung von kritischen Abschnitten
+  - Auswahlkriterien für nebenläufige Design-Patterns (Master/Worker, Pipes,
+    Publish/subscribe, ...)
+  - Verwendung von Bibliotheken für Standardszenarien
+  - Viele Beispiele und Übungen
+
+
+== Schulungs- bzw. Kursvoraussetzungen
+
+Kenntnisse entsprechend des Kurses „Go - Einführung in die Programmierung mit
+Go“, erworben durch Kursbesuch oder gleichwertige Kenntnisse aus der Praxis.
+
+
+// vim:set ft=asciidoc :
