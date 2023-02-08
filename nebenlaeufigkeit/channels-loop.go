@@ -10,6 +10,7 @@ func provide(c chan int) {
 		n *= 2
 		c <- n - 1
 	}
+	fmt.Println("Das war's.")
 }
 
 func main() {
