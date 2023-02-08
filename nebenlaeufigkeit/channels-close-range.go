@@ -19,13 +19,9 @@ func collatz(n int, c chan int) {
 
 func main() {
 	c := make(chan int)
-	go collatz(27, c)
+	go collatz(11, c)
 
-	for {
-		v, ok := <-c
-		if !ok {
-			break
-		}
+	for v := range c {
 		fmt.Println(v)
 	}
 }
