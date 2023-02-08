@@ -5,6 +5,18 @@ import (
 	"math"
 )
 
+type MyFloat float64
+
+func (t *MyFloat) Abs() float64 {
+	var f float64 = float64(*t)
+	if f < 0.0 {
+		return -f
+	} else {
+		return f
+	}
+}
+
+
 type Vertex struct {
 	X, Y float64
 }
@@ -27,4 +39,8 @@ func main() {
 	// Nur der Zeiger ist ein Abser
 	// a = v
 	// fmt.Println(a.Abs())
+
+	var f MyFloat = -3.33333
+	a = &f
+	fmt.Println(a.Abs())
 }
