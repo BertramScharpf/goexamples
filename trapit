@@ -1,0 +1,6 @@
+#!/bin/sh
+
+trap 'echo "Signal empfangen."'  TERM INT
+
+echo "Ich bin Prozeß Nr. $$"
+while : ; do sleep 1 ; done
