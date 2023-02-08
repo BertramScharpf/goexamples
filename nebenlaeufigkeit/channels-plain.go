@@ -4,12 +4,17 @@ import (
 	"fmt"
 )
 
-func main() {
-	c := make(chan string, 2)
+func provide(c chan string) {
 	c <- "foo"
 	c <- "bar"
-	fmt.Println(<-c)
 	c <- "baz"
+}
+
+func main() {
+	c := make(chan string)
+	go provide(c)
+
+	fmt.Println(<-c)
 	fmt.Println(<-c)
 	fmt.Println(<-c)
 }
