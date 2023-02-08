@@ -12,14 +12,14 @@ type SafeCounter struct {
 }
 
 func (c *SafeCounter) Inc() {
-	// c.mux.Lock()
-	// defer c.mux.Unlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	c.v++
 }
 
 func (c *SafeCounter) Value() int {
-	// c.mux.Lock()
-	// defer c.mux.Unlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	return c.v
 }
 
