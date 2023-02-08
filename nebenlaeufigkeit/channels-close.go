@@ -1,8 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func collatz(n int, c chan int) {
 	for {
@@ -16,13 +14,18 @@ func collatz(n int, c chan int) {
 			n = 3*n + 1
 		}
 	}
+	close(c)
 }
 
 func main() {
 	c := make(chan int)
-	go collatz(5, c)
+	go collatz(11, c)
 
-	for i := 0; i < 9; i++ {
-		fmt.Println(<-c)
+	for {
+		v, ok := <-c
+		if !ok {
+			break
+		}
+		fmt.Println(v)
 	}
 }
